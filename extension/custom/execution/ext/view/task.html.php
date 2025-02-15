@@ -14,18 +14,20 @@
 include $app->getModuleRoot() . 'common/view/header.html.php';
 include $app->getModuleRoot() . 'common/view/datatable.fix.html.php';
 include $app->getModuleRoot() . 'common/view/zui3dtable.html.php';
+include $app->getModuleRoot() . 'common/view/kindeditor.html.php';
 $canBeChangedByProject = common::canModify('project', $project);
 if(!$canBeChangedByProject) foreach($tasks as $taskChild) $taskChild->assignedToChange = false;
-
-$cols      = $this->task->generateCol($orderBy);
-$tasks     = $this->task->generateRow($tasks, $users, $execution, $showBranch, $branchGroups, $modulePairs);
-$assignApp = $setModule ? '' : '#app=project';
-$sortLink  = helper::createLink('execution', 'task', "executionID={$execution->id}&status={$status}&param={$param}&orderBy={orderBy}&recTotal={$recTotal}&recPerPage={$recPerPage}") . $assignApp;
+$cols          = $this->task->generateCol($orderBy);
+$tasks         = $this->task->generateRow($tasks, $users, $execution, $showBranch, $branchGroups, $modulePairs);
+$assignApp     = $setModule ? '' : '#app=project';
+$sortLink      = helper::createLink('execution', 'task', "executionID={$execution->id}&status={$status}&param={$param}&orderBy={orderBy}&recTotal={$recTotal}&recPerPage={$recPerPage}") . $assignApp;
+$commentAction = helper::createLink('action', 'batchComment', 'objectType=task');
 js::set('moduleID', $moduleID);
 js::set('productID', $productID);
 js::set('executionID', $executionID);
 js::set('browseType', $browseType);
 js::set('extra', ($execution->lifetime == 'ops' or in_array($execution->attribute, array('request', 'review'))) ? 'unsetStory' : '');
+js::set('checkedNull', $lang->task->batchComment->checkedNull);
 
 $task = reset($tasks);
 $canBatchEdit         = common::hasPriv('task', 'batchEdit', !empty($task) ? $task : null);
@@ -33,8 +35,8 @@ $canBatchClose        = (common::hasPriv('task', 'batchClose', !empty($task) ? $
 $canBatchCancel       = (common::hasPriv('task', 'batchCancel', !empty($task) ? $task : null) and strtolower($browseType) != 'cancel');
 $canBatchChangeModule = common::hasPriv('task', 'batchChangeModule', !empty($task) ? $task : null);
 $canBatchAssignTo     = common::hasPriv('task', 'batchAssignTo', !empty($task) ? $task : null);
-
-$canBatchAction = ($canBatchEdit or $canBatchClose or $canBatchCancel or $canBatchChangeModule or $canBatchAssignTo);
+$canBatchComment      = common::hasPriv('action', 'batchComment', !empty($task) ? $task : null);
+$canBatchAction       = ($canBatchEdit or $canBatchClose or $canBatchCancel or $canBatchChangeModule or $canBatchAssignTo or $canBatchComment);
 
 if(!$canBatchAction) unset($cols[0]->checkbox);
 
@@ -336,6 +338,13 @@ js::set('data', json_encode($tasks));
                 </div>
               </div>
                 <?php endif;?>
+                <?php
+                if($canBatchComment)
+                {
+                  echo html::hidden('batchCommentVal', '');
+                  echo html::commonButton($lang->batchComment, "href='#commentModel' data-toggle='modal'", 'btn btn-info');
+                }
+                ?>
               </div>
               <?php endif;?>
               <div class="table-statistic"><?php echo $summary;?></div>
@@ -363,4 +372,27 @@ js::set('data', json_encode($tasks));
       });
   </script>
 <?php endif; ?>
+<div class="modal fade modal-comment" id="commentModel">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><i class="icon icon-close"></i></button>
+        <h4 class="modal-title"><?php echo $lang->action->batchCreate;?></h4>
+      </div>
+      <div class="modal-body">
+        <form class="load-indicator not-watch" action="<?php echo $commentAction;?>" target='hiddenwin' method='post'>
+          <div class="form-group">
+            <textarea id='comment' name='comment' class="form-control" rows="8" autofocus="autofocus"></textarea>
+          </div>
+          <div class="form-group form-actions text-center">
+          <?php echo html::hidden('taskIDS', ''); ?>
+            <button type="button" class="btn btn-primary btn-wide" id="batchComment"><?php echo $lang->save;?></button>
+            <button type="submit" class="btn btn-primary btn-wide hidden" id="batchCommentSubmit"></button>
+            <button type="button" class="btn btn-wide" data-dismiss="modal"><?php echo $lang->close;?></button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <?php include $app->getModuleRoot() . 'common/view/footer.html.php';?>

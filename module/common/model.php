@@ -2729,6 +2729,7 @@ EOF;
         if($module == 'testcase' and $method == 'batchconfirmcaseupdate') $method = 'confirmlibcasechange';
         if($module == 'testcase' and $method == 'batchignorecaseupdate') $method = 'ignorelibcasechange';
         if($module == 'bug' and $method == 'batchsetdeadline') $method = 'batchedit';
+        if($module == 'action' and $method == 'batchComment') $method = 'comment';
 
         /* If the user is doing a tutorial, have all tutorial privs. */
         if(defined('TUTORIAL'))
@@ -3191,6 +3192,7 @@ EOF;
         global $app, $config;
         static $productsStatus   = array();
         static $executionsStatus = array();
+        static $projectsStatus   = array();
 
         /* Check the product is closed. */
         if(!empty($object->product) and is_numeric($object->product) and empty($config->CRProduct))
@@ -3213,14 +3215,27 @@ EOF;
 
         /* Check the execution is closed. */
         $productModuleList = array('story', 'bug', 'testtask', 'testreport');
-        if(!in_array($module, $productModuleList) and !empty($object->execution) and is_numeric($object->execution) and empty($config->CRExecution))
+        if(!in_array($module, $productModuleList))
         {
-            if(!isset($executionsStatus[$object->execution]))
+            if(!empty($object->execution) and is_numeric($object->execution) and empty($config->CRExecution))
             {
-                $execution = $app->control->loadModel('execution')->getByID($object->execution);
-                $executionsStatus[$object->execution] = $execution ? $execution->status : '';
+                if(!isset($executionsStatus[$object->execution]))
+                {
+                    $execution = $app->control->loadModel('execution')->getByID($object->execution);
+                    $executionsStatus[$object->execution] = $execution ? $execution->status : '';
+                }
+                if($executionsStatus[$object->execution] == 'closed') return false;
             }
-            if($executionsStatus[$object->execution] == 'closed') return false;
+
+            if(!empty($object->project) and is_numeric($object->project) and empty($config->CRProject))
+            {
+                if(!isset($projectsStatus[$object->project]))
+                {
+                    $project = $app->control->loadModel('project')->getByID($object->project);
+                    $projectsStatus[$object->project] = $project ? $project->status : '';
+                }
+                if($projectsStatus[$object->project] == 'closed') return false;
+            }
         }
 
         return true;
