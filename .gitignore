@@ -1,0 +1,5 @@
+config/my.php
+www/install.php
+www/upgrade.php
+tmp/
+www/data/

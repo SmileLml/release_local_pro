@@ -1,0 +1,56 @@
+#mainMenu .btn-toolbar .btn-group .dropdown-menu .btn-active-text:hover .text {color: #fff;}
+#mainMenu .btn-toolbar .btn-group .dropdown-menu .btn-active-text:hover .text:after {border-bottom: unset;}
+.body-modal #mainMenu>.btn-toolbar {width: auto;}
+.assignedTo{border-radius: 4px !important;}
+
+#createActionMenu .dropdown-menu {width: 100%;}
+#productStoryForm table tbody tr td {overflow: hidden; white-space: nowrap;}
+
+.dropdown-menu.with-search {padding: 0; min-width: 150px; overflow: hidden; max-height: 302px;}
+.dropdown-menu > .menu-search .input-group {width: 100%;}
+.dropdown-menu > .menu-search .input-group-addon {position: absolute; right: 10px; top: 0; z-index: 10; background: none; border: none; color: #666;}
+.dropdown-menu > .menu-search .form-control {border: none !important; box-shadow: none !important; border-top: 1px solid #ddd !important;}
+.dropdown-list {display: block; padding: 0; max-height: 270px; overflow-y: auto;}
+.dropdown-list > li > a {display: block; padding: 3px 20px; clear: both; font-weight: normal; line-height: 1.53846154; color: #141414; white-space: nowrap;}
+.dropdown-list > li > a:hover,
+.dropdown-list > li > a:focus {color: #1a4f85; text-decoration: none; background-color: #ddd;}
+#productStoryForm .setting {height: 25px;}
+
+.pl-5px {padding-left: 5px;}
+.popoverStage {position: relative;}
+.popoverStage .icon-caret-down {position: absolute;}
+a.removeModule {color: #ddd;}
+a.removeModule:hover {color: red;}
+
+.main-table tbody > tr.table-children > td:first-child::before {width: 3px;}
+@-moz-document url-prefix() {.main-table tbody > tr.table-children > td:first-child::before {width: 4px;};}
+
+#batchUnlinkStoryTip .modal-body {padding-top: 10px; max-height: 400px; overflow: auto;}
+#batchUnlinkStoryTip .table thead {position: fixed;}
+#batchUnlinkStoryTip .table tbody {position: relative; top: 33px; display:block; overflow-y: scroll; max-height: 260px;}
+#batchUnlinkStoryTip .table tfoot {position: relative; bottom: -30px;}
+#batchUnlinkStoryTip .table td {border-bottom: 0px;}
+#batchUnlinkStoryTip .table th:first-child {width: 460px;}
+#mainMenu .dropdown-menu>li>a>.icon {top: 4px;}
+#productStoryForm tbody tr td .label {max-width: 100px; text-overflow: unset;}
+.c-span {margin-left: 19px;}
+.btn-toolbar #query span.text{overflow: hidden; width: 52px; vertical-align: middle; margin-right: 1px;}
+#linkStoryByPlan .modal-header {padding: 20px 0 10px 0; border-bottom: 0px}
+
+.dtable-cell[data-col="actions"] > .dtable-cell-content .c-actions {overflow: visible;}
+.dtable-cell[data-col="actions"] > .dtable-cell-content .c-actions .dividing-line {width: 1px; height: 16px; display: inline-block; vertical-align: middle; background: #F4F5F7; margin: 0 4px 0 0;}
+.table-footer{z-index: 10; padding-left: 12px;}
+#dtable .scrollbar, .table-header.fixed-right {z-index: 11}
+
+#heading .btn-group {display: inline-block !important;}
+#mainMenu .btn-group {gap: 0px;}
+.btn-group .icon-close:before {font-size: 5px; vertical-align: 25%;}
+.btn-group a.btn-secondary, .btn-group a.btn-primary {border-right: 1px solid rgba(255,255,255,0.2);}
+.btn-group button.dropdown-toggle.btn-secondary, .btn-group button.dropdown-toggle.btn-primary {padding:6px;}
+
+.dtable-cell[data-sort='up']   .dtable-sort:before {color: #000; opacity: 1}
+.dtable-cell[data-sort='down'] .dtable-sort:after  {color: #000; opacity: 1}
+.dtable .toggle-icon {border-radius: 50%; border-style: solid;}
+.dtable .label-pri {overflow: hidden;}
+
+#mainContent .scroll-wrapper {z-index: 11;}

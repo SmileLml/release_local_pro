@@ -1,0 +1,2 @@
+.table td {text-overflow: ellipsis; overflow: hidden; white-space: nowrap;}
+.table td.c-actions {text-overflow:clip;}

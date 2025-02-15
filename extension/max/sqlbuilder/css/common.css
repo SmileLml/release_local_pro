@@ -1,0 +1,12 @@
+.input-group .chosen-container{max-width: 200px;}
+#tableBox .input-group .chosen-container{min-width: 130px; max-width:140px;!important}
+#fieldBox .input-group .chosen-container{min-width: 300px; max-width:350px;!important}
+
+#fieldBox .slave-field-row .input-group{ border: 1px solid red;}
+
+#conditionBox .input-group .chosen-container{min-width: 210px; max-width:220px;!important}
+#conditionBox .input-group input.form-control{min-width: 70px; max-width: 90px;!important}
+#orderByBox .input-group .chosen-container{min-width: 200px; max-width:220px;!important}
+#groupAndLimtBox .input-group .chosen-container{min-width: 200px; max-width:220px;!important}
+
+.chosen-container .chosen-drop {min-width: 300px;!important}

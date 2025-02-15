@@ -1,0 +1,3 @@
+.hoursConsumed, .hoursConsumedToday {background: #FFEFEF;color: #FF6262;}
+.hoursSurplus, .hoursSurplusToday {color: #2e7fff;background: #e6f0ff;}
+.hoursConsumed, .hoursSurplus, .hoursConsumedToday, .hoursSurplusToday{border-radius: 9px;padding: 3px 7px; min-width: 18px;}

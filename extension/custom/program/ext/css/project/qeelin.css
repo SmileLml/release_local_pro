@@ -1,0 +1,2 @@
+.custom-checkbox>label:after,.custom-checkbox>label:before {background-color: #bbbbbb;pointer-events: none;opacity: 0.5;}
+.custom-checkbox>label {cursor: not-allowed;}

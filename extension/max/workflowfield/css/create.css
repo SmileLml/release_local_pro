@@ -1,0 +1,4 @@
+.length + .digits {border-left-width: 1px; border-radius: 4px 0 0 4px !important;}
+.table-form td.dataTip {line-height: 18px;}
+.field-tr .required.required-wrapper::after {left: 192px;}
+.field-input {width: 188px;}
