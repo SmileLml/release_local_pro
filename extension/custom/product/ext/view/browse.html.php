@@ -14,6 +14,7 @@
 include $app->getModuleRoot() . 'common/view/header.html.php';
 include $app->getModuleRoot() . 'common/view/datatable.fix.html.php';
 include $app->getModuleRoot() . 'common/view/zui3dtable.html.php';
+include $app->getModuleRoot() . 'common/view/kindeditor.html.php';
 
 $options = array();
 $options['users']        = $users;
@@ -42,6 +43,8 @@ array_map(function($story) use(&$hasChildren, $canBeChangedByProject)
   $story->assignedToChange = $canBeChangedByProject;
 }, $stories);
 
+$commentAction = helper::createLink('action', 'batchComment', 'objectType=story');
+
 $cols = $this->story->generateCol($orderBy, $storyType, $hasChildren);
 $rows = $this->story->generateRow($stories, $cols, $options, $project, $storyType);
 $vars = "productID=$productID&branch=$branch&browseType=$browseType&param=$param&storyType=$storyType&orderBy={orderBy}&recTotal={$pager->recTotal}&recPerPage={$pager->recPerPage}";
@@ -62,8 +65,9 @@ $canBatchAssignTo      = ($canBeChanged and common::hasPriv($storyType, 'batchAs
 $canBatchUnlink        = ($canBeChanged and $projectHasProduct and common::hasPriv('projectstory', 'batchUnlinkStory'));
 $canBatchImportToLib   = ($canBeChanged and $isProjectStory and in_array($this->config->edition, array('max', 'ipd')) and common::hasPriv('story', 'batchImportToLib') and helper::hasFeature('storylib'));
 $canBatchChangeRoadmap = common::hasPriv('story', 'batchChangeRoadmap');
-
-$canBatchAction = ($canBatchEdit or $canBatchClose or $canBatchReview or $canBatchChangeStage or $canBatchChangeModule or $canBatchChangePlan or $canBatchAssignTo or $canBatchUnlink or $canBatchImportToLib or $canBatchChangeBranch or $canBatchChangeRoadmap);
+/* Ignore restrictions on product modification after closure. */
+$canBatchComment       = common::hasPriv('action', 'batchComment');
+$canBatchAction        = ($canBatchEdit or $canBatchClose or $canBatchReview or $canBatchChangeStage or $canBatchChangeModule or $canBatchChangePlan or $canBatchAssignTo or $canBatchUnlink or $canBatchImportToLib or $canBatchChangeBranch or $canBatchChangeRoadmap or $canBatchComment);
 if(!$canBatchAction) unset($cols[0]->checkbox);
 
 if(!$canBeChangedByProject)
@@ -105,6 +109,7 @@ js::set('URAndSR',           $this->config->URAndSR);
 js::set('storyType',         $storyType);
 js::set('vision',            $this->config->vision);
 js::set('pageSummary',       $summary);
+js::set('checkedNull',       $lang->story->batchComment->checkedNull);
 ?>
 <?php if(isset($project->hasProduct) && empty($project->hasProduct) && $project->model != 'scrum'):?>
   <style>
@@ -617,6 +622,13 @@ js::set('pageSummary',       $summary);
                 <?php echo html::a('#batchImportToLib', $lang->story->importToLib, '', 'class="btn" data-toggle="modal" id="importToLib"');?>
               <?php endif;?>
               <?php endif;?>
+              <?php
+                if($canBatchComment)
+                {
+                  echo html::hidden('batchCommentVal', '');
+                  echo html::commonButton($lang->batchComment, "href='#commentModel' data-toggle='modal'", 'btn btn-info');
+                }
+              ?>
             </div>
             <div class="table-statistic"><?php echo $summary;?></div>
             <?php $pager->show('right', 'pagerjs');?>
@@ -705,7 +717,6 @@ js::set('pageSummary',       $summary);
     </div>
   </div>
 <?php endif;?>
-
   <div class="modal fade" id="batchUnlinkStoryTip">
     <div class="modal-dialog mw-700px">
       <div class="modal-content">
@@ -735,7 +746,29 @@ js::set('pageSummary',       $summary);
       </div>
     </div>
   </div>
-
+  <div class="modal fade modal-comment" id="commentModel">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><i class="icon icon-close"></i></button>
+        <h4 class="modal-title"><?php echo $lang->action->batchCreate;?></h4>
+      </div>
+      <div class="modal-body">
+        <form class="load-indicator not-watch" action="<?php echo $commentAction;?>" target='hiddenwin' method='post'>
+          <div class="form-group">
+            <textarea id='comment' name='comment' class="form-control" rows="8" autofocus="autofocus"></textarea>
+          </div>
+          <div class="form-group form-actions text-center">
+          <?php echo html::hidden('storyIDS', ''); ?>
+            <button type="button" class="btn btn-primary btn-wide" id="batchComment"><?php echo $lang->save;?></button>
+            <button type="submit" class="btn btn-primary btn-wide hidden" id="batchCommentSubmit"></button>
+            <button type="button" class="btn btn-wide" data-dismiss="modal"><?php echo $lang->close;?></button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>              
 <?php
 $storyCommon = $storyType == 'requirement' ? $lang->URCommon : $lang->SRCommon;
 js::set('checkedSummary', str_replace('%storyCommon%', $storyCommon, $lang->product->checkedSummary));
