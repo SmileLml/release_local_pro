@@ -26,6 +26,7 @@ class myproject extends project
         $this->loadModel('product');
         $this->loadModel('datatable');
         $this->loadModel('tree');
+        $this->loadModel('action');
 
         /* Save session. */
         $this->session->set('bugList', $this->app->getURI(true), 'project');

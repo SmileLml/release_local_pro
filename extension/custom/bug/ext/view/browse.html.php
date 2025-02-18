@@ -14,11 +14,13 @@
 <?php include $app->getModuleRoot() . 'common/view/datatable.fix.html.php';?>
 <?php include $app->getModuleRoot() . 'common/view/zui3dtable.html.php';?>
 <?php include $app->getModuleRoot() . 'common/view/datepicker.html.php';?>
+<?php include $app->getModuleRoot() . 'common/view/kindeditor.html.php';?>
 <?php
 $cols                  = $this->bug->generateCol($orderBy);
 $rows                  = $this->bug->generateRow($bugs, $branchOption, $modulePairs, $projectPairs, $plans, $executions, $stories, $tasks, $users);
 $allNoCheckbox         = true;
 $sortLink              = $this->createLink('bug', 'browse', "productID=$productID&branch=$branch&browseType=$browseType&param=$param&orderBy={orderBy}&recTotal=$pager->recTotal&recPerPage=$pager->recPerPage&pageID=$pager->pageID");
+$commentAction         = helper::createLink('action', 'batchComment', 'objectType=bug');
 
 foreach($rows as $row) if($row->canBeClosedByProject) $allNoCheckbox = false;
 
@@ -50,9 +52,10 @@ js::set('executionLang',  $lang->bug->execution);
 js::set('projectLang',    $lang->bug->project);
 js::set('noempty',        $lang->bug->noempty);
 js::set('bugOpenedBuild', $lang->bug->openedBuild);
-js::set('projectExecutionPairs', $projectExecutionPairs);
+js::set('checkedNull',      $lang->bug->batchComment->checkedNull);
 js::set('batchCheckMax',    $config->bug->batchCheckMax);
 js::set('batchCheckMaxLang',$lang->bug->batchCheckMax);
+js::set('projectExecutionPairs', $projectExecutionPairs);
 $currentBrowseType = isset($lang->bug->mySelects[$browseType]) && in_array($browseType, array_keys($lang->bug->mySelects)) ? $browseType : '';
 ?>
 <div id="mainMenu" class="clearfix">
@@ -240,7 +243,8 @@ $currentBrowseType = isset($lang->bug->mySelects[$browseType]) && in_array($brow
           $canBatchResolve      = ($canBeChanged and common::hasPriv('bug', 'batchResolve'));
           $canBatchAssignTo     = ($canBeChanged and common::hasPriv('bug', 'batchAssignTo'));
           $canBatchAdjust       = ($canBeChanged and common::hasPriv('bug', 'batchAdjust'));
-          $canBatchAction       = ($canBatchEdit || $canBatchConfirm || $canBatchClose || $canBatchActivate || $canBatchChangeBranch || $canBatchChangeModule || $canBatchResolve || $canBatchAssignTo || $canBatchAdjust);
+          $canBatchComment      = ($canBeChanged and common::hasPriv('action', 'batchComment'));
+          $canBatchAction       = ($canBatchEdit || $canBatchConfirm || $canBatchClose || $canBatchActivate || $canBatchChangeBranch || $canBatchChangeModule || $canBatchResolve || $canBatchAssignTo || $canBatchAdjust || $canBatchComment);
           ?>
           <?php if($canBatchAction):?>
           <?php if(!$allNoCheckbox):?>
@@ -411,7 +415,13 @@ $currentBrowseType = isset($lang->bug->mySelects[$browseType]) && in_array($brow
                       echo html::hidden('deadline', '');
                       echo html::commonButton($lang->bug->deadline, "href='#deadlineModal' data-toggle='modal'", 'btn btn-info');
                     }
+                    if($canBatchComment)
+                    {
+                      echo html::hidden('batchCommentVal', '');
+                      echo html::commonButton($lang->batchComment, "href='#commentModel' data-toggle='modal'", 'btn btn-info');
+                    }
                   ?>
+
                 </div>
                 <?php endif;?>
                 <div class="table-statistic"><?php echo $summary;?></div>
@@ -487,6 +497,29 @@ $currentBrowseType = isset($lang->bug->mySelects[$browseType]) && in_array($brow
               </tr>
             </tfoot>
           </table>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade modal-comment" id="commentModel">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><i class="icon icon-close"></i></button>
+        <h4 class="modal-title"><?php echo $lang->action->batchCreate;?></h4>
+      </div>
+      <div class="modal-body">
+        <form class="load-indicator not-watch" action="<?php echo $commentAction;?>" target='hiddenwin' method='post'>
+          <div class="form-group">
+            <textarea id='comment' name='comment' class="form-control" rows="8" autofocus="autofocus"></textarea>
+          </div>
+          <div class="form-group form-actions text-center">
+          <?php echo html::hidden('bugIDS', ''); ?>
+            <button type="button" class="btn btn-primary btn-wide" id="batchComment"><?php echo $lang->save;?></button>
+            <button type="submit" class="btn btn-primary btn-wide hidden" id="batchCommentSubmit"></button>
+            <button type="button" class="btn btn-wide" data-dismiss="modal"><?php echo $lang->close;?></button>
+          </div>
         </form>
       </div>
     </div>

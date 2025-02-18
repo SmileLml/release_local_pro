@@ -164,3 +164,15 @@ function checkMaxSelect()
     }
     $('#popModal').click();
 }
+
+$('#batchComment').click(function(){
+    var dtable = $('#bugList').zui('dtable');
+    var checkedList = dtable.$.getChecks();
+    if(!checkedList)
+    {
+        alert(checkedNull);
+        return;
+    }
+    $('#commentModel input[name=bugIDS]').val(checkedList)
+    $('#batchCommentSubmit').click();
+});

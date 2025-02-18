@@ -13,6 +13,7 @@
 <?php include $app->getModuleRoot() . 'common/view/header.html.php';?>
 <?php include $app->getModuleRoot() . 'common/view/datatable.fix.html.php';?>
 <?php include $app->getModuleRoot() . 'common/view/datepicker.html.php';?>
+<?php include $app->getModuleRoot() . 'common/view/kindeditor.html.php';?>
 <?php
 js::set('deadlineAction', $this->createLink('bug', 'batchSetDeadline'));
 js::set('projectExecutionPairs', $projectExecutionPairs);
@@ -25,6 +26,7 @@ js::set('projectLang',    $lang->bug->project);
 js::set('executionLang',  $lang->bug->execution);
 js::set('bugOpenedBuild', $lang->bug->openedBuild);
 js::set('noempty',        $lang->bug->noempty);
+js::set('checkedNull',      $lang->bug->batchComment->checkedNull);
 js::set('batchCheckMax',    $config->bug->batchCheckMax);
 js::set('batchCheckMaxLang',$lang->bug->batchCheckMax);
 ?>
@@ -123,7 +125,10 @@ js::set('batchCheckMaxLang',$lang->bug->batchCheckMax);
           $canBatchAssignTo = (common::hasPriv('bug', 'batchAssignTo') and common::canModify('project', $project));
           $canBatchAdjust   = (common::hasPriv('bug', 'batchAdjust')   and common::canModify('project', $project));
           $canBatchEdit     = (common::hasPriv('bug', 'batchEdit')     and common::canModify('project', $project));
-          $canBatchAction   = ($canBatchAssignTo || $canBatchAdjust || $canBatchEdit);
+          $canBatchComment  = common::hasPriv('bug', 'batchEdit');
+          $canBatchAction   = ($canBatchAssignTo || $canBatchAdjust || $canBatchEdit || $canBatchComment);
+
+          $commentAction = helper::createLink('action', 'batchComment', 'objectType=bug');
         ?>
         <?php if(!$useDatatable) echo '<div class="table-responsive">';?>
         <table class='table has-sort-head<?php if($useDatatable) echo ' datatable';?>' id='bugList' data-fixed-left-width='<?php echo $widths['leftWidth']?>' data-fixed-right-width='<?php echo $widths['rightWidth']?>'>
@@ -241,6 +246,11 @@ js::set('batchCheckMaxLang',$lang->bug->batchCheckMax);
                   echo html::hidden('deadline', '');
                   echo html::commonButton($lang->bug->deadline, "href='#deadlineModal' data-toggle='modal'", 'btn btn-info');
                 }
+                if($canBatchComment)
+                {
+                  echo html::hidden('batchCommentVal', '');
+                  echo html::commonButton($lang->batchComment, "href='#commentModel' data-toggle='modal'", 'btn btn-info');
+                }
               ?>
             </div>
           <?php endif;?>
@@ -329,6 +339,29 @@ js::set('batchCheckMaxLang',$lang->bug->batchCheckMax);
       </div>
     </div>
   </div>
+  <div class="modal fade modal-comment" id="commentModel">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><i class="icon icon-close"></i></button>
+        <h4 class="modal-title"><?php echo $lang->action->batchCreate;?></h4>
+      </div>
+      <div class="modal-body">
+        <form class="load-indicator not-watch" action="<?php echo $commentAction;?>" target='hiddenwin' method='post'>
+          <div class="form-group">
+            <textarea id='comment' name='comment' class="form-control" rows="8" autofocus="autofocus"></textarea>
+          </div>
+          <div class="form-group form-actions text-center">
+          <?php echo html::hidden('bugIDS', ''); ?>
+            <button type="button" class="btn btn-primary btn-wide" id="batchComment"><?php echo $lang->save;?></button>
+            <button type="submit" class="btn btn-primary btn-wide hidden" id="batchCommentSubmit"></button>
+            <button type="button" class="btn btn-wide" data-dismiss="modal"><?php echo $lang->close;?></button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <?php js::set('replaceID', 'bugList');?>
 <?php js::set('browseType', $type);?>
 <?php js::set('param', $param);?>

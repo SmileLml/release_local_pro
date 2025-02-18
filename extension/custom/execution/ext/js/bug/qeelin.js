@@ -315,3 +315,16 @@ function checkMaxSelect()
     }
     $('#popModal').click();
 }
+
+$('#batchComment').click(function(){
+    var selectedValues = $('input[name^=bugIDList]:checked').map(function() {
+        return $(this).val();
+    }).get();
+    if(!selectedValues)
+    {
+        alert(checkedNull);
+        return;
+    }
+    $('#commentModel input[name=bugIDS]').val(selectedValues)
+    $('#batchCommentSubmit').click();
+});

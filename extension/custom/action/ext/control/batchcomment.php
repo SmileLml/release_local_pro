@@ -39,7 +39,10 @@ class myaction extends action
             }
             if($accessDenied) return print(js::error(sprintf($this->lang->story->batchComment->storyNoAccessDenied, implode(',', $accessDenied))));
         }
-
+        elseif(strtolower($objectType) == 'bug' && $this->post->bugIDS)
+        {
+            $idLists = explode(',', string: $this->post->bugIDS);
+        }
         if(!$this->post->comment) return print(js::error($this->lang->action->commentNull));
 
         foreach($idLists as $id) $actionID = $this->action->create(strtolower($objectType), $id, 'Commented', $this->post->comment);
