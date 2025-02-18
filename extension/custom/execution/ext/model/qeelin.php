@@ -499,3 +499,79 @@ public function printNestedList($execution, $isChild, $users, $productID, $proje
         foreach($execution->points as $point) echo $this->buildPointList($execution, $point, $pendingReviews);
     }
 }
+
+/**
+ * Get tasks.
+ *
+ * @param  int    $productID
+ * @param  int    $executionID
+ * @param  array  $executions
+ * @param  string $browseType
+ * @param  int    $queryID
+ * @param  int    $moduleID
+ * @param  string $sort
+ * @param  object $pager
+ * @access public
+ * @return array
+ */
+public function getTasks($productID, $executionID, $executions, $browseType, $queryID, $moduleID, $sort, $pager, $showParentTask = false)
+{
+    $this->loadModel('task');
+
+    /* Set modules and $browseType. */
+    $modules = array();
+    if($moduleID) $modules = $this->loadModel('tree')->getAllChildID($moduleID);
+    if($browseType == 'bymodule' or $browseType == 'byproduct')
+    {
+        if(($this->session->taskBrowseType) and ($this->session->taskBrowseType != 'bysearch')) $browseType = $this->session->taskBrowseType;
+    }
+
+    /* Get tasks. */
+    $tasks = array();
+    if($browseType != "bysearch")
+    {
+        $queryStatus = $browseType == 'byexecution' ? 'all' : $browseType;
+        if($queryStatus == 'unclosed')
+        {
+            $queryStatus = $this->lang->task->statusList;
+            unset($queryStatus['closed']);
+            $queryStatus = array_keys($queryStatus);
+        }
+        $tasks = $this->task->getExecutionTasks($executionID, $productID, $queryStatus, $modules, $sort, $pager, $showParentTask);
+    }
+    else
+    {
+        if($queryID)
+        {
+            $query = $this->loadModel('search')->getQuery($queryID);
+            if($query)
+            {
+                $this->session->set('taskQuery', $query->sql);
+                $this->session->set('taskForm', $query->form);
+            }
+            else
+            {
+                $this->session->set('taskQuery', ' 1 = 1');
+            }
+        }
+        else
+        {
+            if($this->session->taskQuery == false) $this->session->set('taskQuery', ' 1 = 1');
+        }
+
+        if(strpos($this->session->taskQuery, "deleted =") === false) $this->session->set('taskQuery', $this->session->taskQuery . " AND deleted = '0'");
+
+        $taskQuery = $this->session->taskQuery;
+        /* Limit current execution when no execution. */
+        if(strpos($taskQuery, "`execution` =") === false) $taskQuery = $taskQuery . " AND `execution` = $executionID";
+        $executionQuery = "`execution` " . helper::dbIN(array_keys($executions));
+        $taskQuery      = str_replace("`execution` = 'all'", $executionQuery, $taskQuery); // Search all execution.
+        if($showParentTask) $taskQuery .= " AND `parent` != 0";
+        $this->session->set('taskQueryCondition', $taskQuery, $this->app->tab);
+        $this->session->set('taskOnlyCondition', true, $this->app->tab);
+
+        $tasks = $this->getSearchTasks($taskQuery, $pager, $sort);
+    }
+
+    return $tasks;
+}

@@ -139,6 +139,7 @@ js::set('data', json_encode($tasks));
     }
     ?>
     <a class="btn btn-link querybox-toggle" id='bysearchTab'><i class="icon icon-search muted"></i> <?php echo $lang->product->searchStory;?></a>
+    <?php echo html::checkbox('showParentTask', array('1' => $lang->task->parent), '', $this->cookie->showParentTask ? 'checked=checked' : '');?>
   </div>
   <?php $taskCreateLink = $this->createLink('task', 'create', "executionID=$executionID" . (isset($moduleID) ? "&storyID=0&moduleID=$moduleID" : ""));?>
   <?php if(!isonlybody()): ?>

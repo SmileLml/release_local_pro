@@ -188,6 +188,7 @@ $filter->projectplan->browse      = new stdclass();
 $filter->kanban->space            = new stdclass();
 $filter->execution->kanban        = new stdclass();
 $filter->execution->all           = new stdclass();
+$filter->execution->task          = new stdclass();
 $filter->group->editmanagepriv    = new stdclass();
 $filter->caselib->default         = new stdclass();
 
@@ -340,6 +341,7 @@ $filter->execution->story->cookie['executionStoryOrder']  = 'code';
 $filter->execution->export->cookie['checkedItem']         = 'reg::checked';
 $filter->execution->kanban->cookie['taskToOpen']          = 'int';
 $filter->execution->all->cookie['showExecutionBatchEdit'] = 'int';
+$filter->execution->task->cookie['showParentTask']        = 'code';
 
 $filter->testcase->browse->cookie['caseModule']      = 'int';
 $filter->testcase->browse->cookie['caseSuite']       = 'int';
