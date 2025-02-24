@@ -24,6 +24,19 @@ $(function(){
         hoursSurplus  = Math.round(hoursSurplus * 1000) / 1000;
         $('.hoursConsumed').html(hoursConsumed + 'h');
         $('.hoursSurplus').html(hoursSurplus + 'h');
+
+        if(objectType == 'task')
+        {
+            taskConsumed = parseFloat(taskConsumed) - parseFloat($prev) + $current;
+            if(taskEstimate == 0 || taskEstimate <= taskConsumed)
+            {
+                $('#left').val(0);
+            }
+            else
+            {
+                $('#left').val(Math.round((taskEstimate - taskConsumed) * 1000) / 1000);
+            }
+        }
         $prev = $(this).val();
         $prev = parseFloat(typeof($prev) == 'undefined' ? 0 : $prev);
         $prev = isNaN($prev) ? 0 : $prev;

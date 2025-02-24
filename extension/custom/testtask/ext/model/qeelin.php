@@ -54,6 +54,8 @@ public function create($projectID = 0)
     }
 }
 
+
+
 /**
  * Print cell data.
  *
@@ -267,7 +269,7 @@ function printCell($col, $run, $users, $task, $branches, $modulePairs, $mode = '
  * @access public
  * @return void
  */
-public function getById($taskID, $setImgSize = false)
+public function getById($taskID, $setImgSize = false, $originalDesc = false)
 {
     $task = $this->dao->select("*")->from(TABLE_TESTTASK)->where('id')->eq((int)$taskID)->fetch();
     if($task)
@@ -297,8 +299,131 @@ public function getById($taskID, $setImgSize = false)
 
     if(!$task) return false;
 
-    $task = $this->loadModel('file')->replaceImgURL($task, 'desc');
+    if(!$originalDesc) $task = $this->loadModel('file')->replaceImgURL($task, 'desc');
     if($setImgSize) $task->desc = $this->loadModel('file')->setImgSize($task->desc);
     $task->files = $this->loadModel('file')->getByObject('testtask', $task->id);
     return $task;
+}
+
+function buildOperateBrowseMenuExt($task)
+{
+    $menu   = '';
+    $params = "taskID=$task->id";
+    $username = $this->app->user->account;
+    $menu .= '<div id="action-divider">';
+    $menu .= common::buildMyIconButton('testtask',   'autorun',    "tid=$task->id&username=$username", $task,'browse',  'play' ,'', 'iframe', true, "data-width='100%' data-height='800px'");
+    $menu .= $this->buildMenu('testtask',   'cases',    $params, $task, 'browse', 'sitemap');
+    $menu .= $this->buildMenu('testtask',   'linkCase', "$params&type=all&param=myQueryID", $task, 'browse', 'link');
+    $menu .= $this->buildMenu('testreport', 'browse',   "objectID=$task->product&objectType=product&extra=$task->id", $task, 'browse', 'summary', '', '', false, '', $this->lang->testreport->common);
+    $menu .= '</div>';
+    $menu .= $this->buildMenu('testtask',   'view',     $params, $task, 'browse', 'list-alt', '', 'iframe', true, "data-width='90%'");
+    $menu .= $this->buildMenu('testtask',   'edit',     $params, $task, 'browse');
+
+    $copyClickable = $this->buildMenu('testtask', 'copy', $params, $task, 'browse', '', '', '', '', '', '', false);
+    if(common::hasPriv('testtask', 'copy', $task))
+    {
+        $class = '';
+        if(!$copyClickable) $class = ' disabled';
+        $menu .= html::a("javascript:copyTesttask(\"$task->id\")", "<i class='icon-common-copy icon-copy'></i>", '', "data-app='qa' class='btn {$class}'");
+        $menu .= html::a("#toCopy", "", '', "data-app='qa' data-toggle='modal' id='model{$task->id}'  class='btn hidden'");
+    }
+
+    $clickable = $this->buildMenu('testtask', 'delete', $params, $task, 'browse', '', '', '', '', '', '', false);
+    if(common::hasPriv('testtask', 'delete', $task))
+    {
+        $deleteURL = helper::createLink('testtask', 'delete', "taskID=$task->id&confirm=yes");
+        $class = 'btn';
+        if(!$clickable) $class .= ' disabled';
+        $menu .= html::a("javascript:ajaxDelete(\"$deleteURL\",\"taskList\",confirmDelete)", '<i class="icon-common-delete icon-trash"></i>', '', "title='{$this->lang->testtask->delete}' class='{$class}'");
+    }
+    return $menu;
+}
+
+public function copy($task, $copyNumber)
+{
+    $now   = helper::now();
+    $tasks = fixer::input('post')->get();
+
+    $newTasks = array();
+    for($i = 1; $i <= $copyNumber; $i++)
+    {
+        $newTask              = new stdClass();
+        $newTask->name        = $task->name . ($i == 10 ? '0' : '00') . $i;
+        $newTask->project     = $task->project;
+        $newTask->execution   = $task->execution;
+        $newTask->product     = $task->product;
+        $newTask->build       = $task->build;
+        $newTask->desc        = $task->desc;
+        $newTask->report      = $task->report;
+        $newTask->testreport  = $task->testreport;
+        $newTask->status      = $task->status;
+        $newTask->mailto      = $task->mailto;
+        $newTask->autocount   = $task->autocount;
+        $newTask->owner       = $tasks->owner[$i];
+        $newTask->pri         = $tasks->pri[$i];
+        $newTask->begin       = $tasks->begin[$i];
+        $newTask->end         = $tasks->end[$i];
+        $newTask->createdBy   = $this->app->user->account;
+        $newTask->createdDate = $now;
+        $newTask->type        = '';
+        $newTask->members     = '';
+        if(isset($tasks->type[$i]))   $newTask->type    = implode(',', $tasks->type[$i]);
+        if(isset($tasks->member[$i])) $newTask->members = implode(',', $tasks->member[$i]);
+
+        if($newTask->begin && $newTask->end && $newTask->begin > $newTask->end)
+        {
+            dao::$errors['message'][] = $this->lang->testtask->beginGreaterEnd;
+            return false;
+        }
+
+        foreach(explode(',', $this->config->testtask->create->requiredFields) as $field)
+        {
+            $field = trim($field);
+            if($field and empty($newTask->$field))
+            {
+                dao::$errors['message'][] = sprintf($this->lang->error->notempty, $this->lang->testtask->$field);
+                return false;
+            }
+        }
+        $newTask->fileIDPairs = array();
+        if($task->files)
+        {
+            $newTask->fileIDPairs = $this->loadModel('file')->copyObjectFiles('testtask', $task);
+        }
+
+        $newTasks[$i] = $newTask;
+    }
+    $cases = $this->dao->select('`case`,version')->from(TABLE_TESTRUN)->where('task')->eq($task->id)->fetchAll();
+
+    $taskIDs = array();
+    foreach($newTasks as $newTask)
+    {
+        $newTaskFileID = $newTask->fileIDPairs;
+        unset($newTask->fileIDPairs);
+        $this->dao->insert(TABLE_TESTTASK)->data($newTask)
+            ->autoCheck($skipFields = 'begin,end')
+            ->batchCheck($this->config->testtask->create->requiredFields, 'notempty')
+            ->checkIF($newTask->begin != '', 'begin', 'date')
+            ->checkIF($newTask->end != '', 'end', 'date')
+            ->checkIF($newTask->end != '', 'end', 'ge', $newTask->begin)
+            ->checkFlow()
+            ->exec();
+        if(!dao::isError())
+        {
+            $taskIDs[] = $taskID = $this->dao->lastInsertID();
+            $this->dao->update(TABLE_FILE)->set('objectID')->eq($taskID)->where('id')->in($newTaskFileID)->exec();
+        }
+        foreach($cases as $case)
+        {
+            $row = new stdclass();
+            $row->task       = $taskID;
+            $row->case       = $case->case;
+            $row->version    = $case->version;
+            $row->assignedTo = '';
+            $row->status     = 'normal';
+            $this->dao->replace(TABLE_TESTRUN)->data($row)->exec();
+            $this->loadModel('action')->create('case', $case->case, 'linked2testtask', '', $taskID);
+        }
+    }
+    return $taskIDs;
 }

@@ -67,7 +67,13 @@ class myeffort extends effort
         }
 
         $objectName = zget($this->lang->effort->objectTypeList, $effort->objectType);
-        if($effort->objectType == 'task')  $objectName = $this->dao->findById($effort->objectID)->from(TABLE_TASK)->fetch('name');
+        if($effort->objectType == 'task')
+        {
+            $object     = $this->dao->findById($effort->objectID)->from(TABLE_TASK)->fetch();
+            $objectName = $object->name;
+            $this->view->consumed = $object->consumed;
+            $this->view->estimate = $object->estimate;
+        }
         if($effort->objectType == 'bug')   $objectName = $this->dao->findById($effort->objectID)->from(TABLE_BUG)->fetch('title');
 
         if($effort->execution)

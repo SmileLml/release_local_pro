@@ -14,6 +14,7 @@
 <?php include $app->getModuleRoot() . 'common/view/datepicker.html.php';?>
 <?php js::set('confirmDelete', $lang->testtask->confirmDelete)?>
 <?php js::set('flow', $config->global->flow);?>
+<?php js::set('productID', $productID);?>
 <?php
 $scope  = $this->session->testTaskVersionScope;
 $status = $this->session->testTaskVersionStatus;
@@ -85,7 +86,7 @@ $canCreateAction = !($product->shadow && empty($config->CRProject) && $product->
         foreach($extendFields as $extendField) echo "<th>{$extendField->name}</th>";
         ?>
         <?php if($canCreateAction):?>
-        <th class='c-actions-6 text-center'><?php echo $lang->actions;?></th>
+        <th class='c-actions-8 text-center'><?php echo $lang->actions;?></th>
         <?php endif;?>
       </tr>
       </thead>
@@ -121,7 +122,7 @@ $canCreateAction = !($product->shadow && empty($config->CRProject) && $product->
           <?php foreach($extendFields as $extendField) echo "<td>" . $this->loadModel('flow')->getFieldValue($extendField, $task) . "</td>";?>
           <?php if($canCreateAction):?>
           <td class='c-actions'>
-            <?php echo $this->testtask->buildOperateMenu($task, 'browse');?>
+            <?php echo $this->testtask->buildOperateBrowseMenuExt($task);?>
           </td>
           <?php endif;?>
         </tr>
@@ -133,6 +134,30 @@ $canCreateAction = !($product->shadow && empty($config->CRProject) && $product->
       <?php $pager->show('right', 'pagerjs');?>
     </div>
   <?php endif;?>
+</div>
+<div class="modal fade" id="toCopy">
+  <div class="modal-dialog mw-500px select-project-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title"><?php echo $lang->testtask->copy;?></h4>
+      </div>
+      <div class="modal-body">
+        <table class='table table-form'>
+          <tr>
+            <th class=""><?php echo $lang->testtask->copyTesttaskNumber;?></th>
+            <?php echo html::hidden('copyTaskID'); ?>
+            <td class='required'><?php echo html::number('copyNumber', 1, "class='form-control' min='1' max='10' oninput='if(!/^[0-9]+$/.test(value)) value=value.replace(/\D/g,\"\");if(value>=10)value=10;if(value<0)value=null' ");?></td>
+          </tr>
+          <tr>
+            <td colspan='2' class='text-center'>
+              <?php echo html::commonButton($lang->testtask->nextStep, "id='toCopyButton'", 'btn btn-primary btn-wide');?>
+              <?php echo html::commonButton($lang->cancel, "id='cancelButton' data-dismiss='modal'", 'btn btn-default btn-wide');?>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 <script>$(function(){$("#" + status + "Tab").addClass('btn-active-text').append(" <span class='label label-light label-badge'><?php echo $pager->recTotal;?></span>")})</script>
 <?php include $app->getModuleRoot() . 'common/view/footer.html.php';?>

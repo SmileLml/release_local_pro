@@ -52,7 +52,12 @@ class myeffort extends effort
         unset($actions['executionTask']);
         unset($actions['executionBug']);
         unset($actions['executions']);
-
+        $taskIDs = array();
+        foreach($executionTask as $key => $value)
+        {
+            $taskIDs[] = explode('_', $key)[1];
+        }
+        $tasks = $this->loadModel('task')->getByList($taskIDs);
         $this->view->title              = $this->lang->my->common . $this->lang->colon . $this->lang->effort->create;
         $this->view->position[]         = $this->lang->effort->create;
         $this->view->date               = !is_numeric($date) ? $date : substr($date, 0, 4) . '-' . substr($date, 4, 2) . '-' . substr($date, 6, 2);
@@ -61,6 +66,7 @@ class myeffort extends effort
         $this->view->executions         = array('' => '') + $joinExecution + $recentlyExecution + $appendExecutions;
         $this->view->executionTask      = $executionTask;
         $this->view->executionBug       = $executionBug;
+        $this->view->tasks              = $tasks;
         $this->view->hoursConsumedToday = $this->loadModel('effort')->getAccountStatistics('', $date);
         $this->display();
     }

@@ -38,7 +38,55 @@
     <button type="button" class="btn btn-mini btn-icon btn-expand-all" title='<?php echo $lang->switchDisplay;?>'>
       <i class="icon icon-plus icon-sm"></i>
     </button>
-    <?php if(isset($actionFormLink)) echo common::printCommentIcon($actionFormLink);?>
+    <?php
+      if(isset($actionFormLink))
+      {
+        if(commonModel::hasPriv('action', 'comment'))
+        {
+          if(isset($config->action->extView[$this->app->rawModule . '-' . $this->app->rawMethod]) && (empty($config->action->extView[$this->app->rawModule . '-' . $this->app->rawMethod]) || (isset($config->action->extView[$this->app->rawModule . '-' . $this->app->rawMethod][$this->app->tab]) && $config->action->extView[$this->app->rawModule . '-' . $this->app->rawMethod][$this->app->tab] == $storyType)))
+          {
+            echo html::commonButton('<i class="icon icon-chat-line"></i> ' . $lang->action->create, '', 'btn btn-link pull-right btn-comment');
+            ?>
+            <div class="modal fade modal-comment">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="icon icon-close"></i></button>
+                    <h4 class="modal-title"><?php echo $lang->action->create; ?></h4>
+                  </div>
+                  <div class="modal-body">
+                    <form class="load-indicator not-watch" action="<?php echo $actionFormLink; ?>" target='hiddenwin' method='post' enctype='multipart/form-data'>
+                      <div class="form-group">
+                        <textarea id='comment' name='comment' class="form-control" rows="8" autofocus="autofocus"></textarea>
+                      </div>
+                      <div class="form-group">
+                        <?php echo $this->fetch('file', 'buildform'); ?>
+                      </div>
+                      <div class="form-group form-actions text-center">
+                        <button type="submit" class="btn btn-primary btn-wide"><?php echo $lang->save; ?></button>
+                        <button type="button" class="btn btn-wide" data-dismiss="modal"><?php echo $lang->close; ?></button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <script>
+            $(function()
+            {
+                \$body = $('body', window.parent.document);
+                if(\$body.hasClass('hide-modal-close')) \$body.removeClass('hide-modal-close');
+            });
+            </script>
+            <?php
+          }
+          else
+          {
+            echo common::printCommentIcon($actionFormLink);
+          }
+        }
+      }
+    ?>
   </div>
   <?php if(!empty($blockHistory)):?>
   </div>

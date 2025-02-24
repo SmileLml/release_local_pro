@@ -23,7 +23,7 @@ $(function(){
                 $('select#objectType').each(function()
                 {
                     var value = $(this).val();
-                    var $consumedInput = $(this).closest('td').next().next().next().find('input');
+                    var $consumedInput = $(this).closest('td').next().next().find('input');
                     if(value.indexOf('task_') >= 0 || value.indexOf('bug_') >= 0)
                     {
                         var workConsumed = parseFloat(typeof($consumedInput.val()) == 'undefined' ? 0 : $consumedInput.val());
@@ -46,7 +46,7 @@ $(function(){
                     $('select#objectType').each(function()
                     {
                         var value = $(this).val();
-                        var $consumedInput = $(this).closest('td').next().next().next().find('input');
+                        var $consumedInput = $(this).closest('td').next().next().find('input');
                         if(value.indexOf('task_') >= 0 || value.indexOf('bug_') >= 0)
                         {
                             $consumedInput.val('')
@@ -67,7 +67,7 @@ $(function(){
 
     var $prev = 0;
     $("input[name^=consumed]").keyup(function(){
-        $objectType = $(this).closest('td').prev().prev().prev().find('select#objectType').val();
+        $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
         if(!$objectType)
         {
             alert(hoursConsumedNoObjectType);
@@ -77,11 +77,12 @@ $(function(){
         $current = $(this).val();
         $current = parseFloat(typeof($current) == 'undefined' ? 0 : $current);
         $current = isNaN($current) ? 0 : $current;
-        $objectType = $(this).closest('td').prev().prev().prev().find('select#objectType').val();
+        $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
         if($objectType.indexOf('task_') >= 0 || $objectType.indexOf('bug_') >= 0)
         {
             if(limitWorkHour - (hoursConsumedToday + $current - $prev) < 0)
             {
+                $(this).closest('td').next().find('input').val('');
                 if($('input[name=date]').val() == currentDate)
                 {
                     alert(hoursConsumedTodayOverflow);
@@ -100,6 +101,23 @@ $(function(){
             hoursSurplusToday  = Math.round(hoursSurplusToday * 1000) / 1000;
             $('.hoursConsumedToday').html(hoursConsumedToday + 'h');
             $('.hoursSurplusToday').html(hoursSurplusToday + 'h');
+
+            if($objectType.indexOf('task_') >= 0)
+            {
+                var taskID = $objectType.slice(5);
+                tasks[taskID].consumed = Math.round((tasks[taskID].consumed + $current - $prev) * 1000) / 1000;
+                var task = tasks[taskID];
+                var estimate = task.estimate;
+                var consumed = task.consumed;
+                if(estimate == 0 || estimate <= consumed)
+                {
+                    $(this).closest('td').next().find('input').val(0);
+                }
+                else
+                {
+                    $(this).closest('td').next().find('input').val(Math.round((estimate - consumed) * 1000) / 1000);
+                }
+            }
             $prev = $(this).val();
             $prev = parseFloat(typeof($prev) == 'undefined' ? 0 : $prev);
             $prev = isNaN($prev) ? 0 : $prev;
@@ -113,7 +131,7 @@ $(function(){
 
     $(document).on('change', 'select#objectType', function()
     {
-        var $consumedInput = $(this).closest('td').next().find('input');
+        var $consumedInput = $(this).closest('td').next().next().find('input');
     });
 });
 
@@ -123,7 +141,7 @@ function cleanEffort()
     $('#objectTable tbody tr.computed select#objectType').each(function()
     {
         var value = $(this).val();
-        var $consumedInput = $(this).closest('td').next().next().next().find('input');
+        var $consumedInput = $(this).closest('td').next().next().find('input');
         if(value.indexOf('task_') >= 0 || value.indexOf('bug_') >= 0)
         {
             var workConsumed = parseFloat(typeof($consumedInput.val()) == 'undefined' ? 0 : $consumedInput.val());
@@ -162,6 +180,21 @@ function deleteEffort(clickedButton)
         hoursSurplusToday  = limitWorkHour - hoursConsumedToday;
         $('.hoursConsumedToday').html(hoursConsumedToday + 'h');
         $('.hoursSurplusToday').html(hoursSurplusToday + 'h');
+        if($objectType.val().indexOf('task_') >= 0)
+        {
+            var taskID = $objectType.val().slice(5);
+            tasks[taskID].consumed = Math.round((parseFloat(tasks[taskID].consumed) - workConsumed) * 1000) / 1000;
+            $('#objectTable tbody tr select#objectType').each(function()
+            {
+                var value = $(this).val();
+                // var $consumedInput = $(this).closest('td').next().next().find('input');
+                if(value.indexOf('task_') >= 0 && value.slice(5) == taskID)
+                {
+                    var left = $(this).closest('td').next().next().next().find('input')
+                    left.val(Math.round((parseFloat(left.val()) + parseFloat(workConsumed)) * 1000) / 1000);
+                }
+            });
+        }
     }
     $(clickedButton).parent().parent().remove();
     updateID();

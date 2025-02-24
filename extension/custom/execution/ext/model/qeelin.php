@@ -575,3 +575,353 @@ public function getTasks($productID, $executionID, $executions, $browseType, $qu
 
     return $tasks;
 }
+
+/**
+ * Import task from Bug.
+ *
+ * @param  int    $executionID
+ * @access public
+ * @return void
+ */
+public function importBugExt($executionID)
+{
+    $this->loadModel('bug');
+    $this->loadModel('task');
+    $this->loadModel('story');
+
+    $now = helper::now();
+
+    $showAllModule = isset($this->config->execution->task->allModule) ? $this->config->execution->task->allModule : '';
+    $modules       = $this->loadModel('tree')->getTaskOptionMenu($executionID, 0, 0, $showAllModule ? 'allModule' : '');
+
+    $execution      = $this->getByID($executionID);
+    $requiredFields = str_replace(',story,', ',', ',' . $this->config->task->create->requiredFields . ',');
+    $requiredFields = trim($requiredFields, ',');
+
+    $bugToTasks = fixer::input('post')->get();
+    $bugs       = $this->bug->getByList(array_keys($bugToTasks->import));
+    foreach($bugToTasks->import as $key => $value)
+    {
+        $bug = zget($bugs, $key, '');
+        if(empty($bug)) continue;
+
+        if($bugToTasks->type[$key] == 'affair')
+        {
+            foreach($bugToTasks->assignedTo[$key] as $assignedTo)
+            {
+                $tasks[$key][] = $this->generateTaskData($execution->project, $executionID, $bug, $key, $modules, $requiredFields, $now, $assignedTo, $bugToTasks);
+            }
+        }
+        else
+        {
+            $tasks[$key] = $this->generateTaskData($execution->project, $executionID, $bug, $key, $modules, $requiredFields, $now, $bugToTasks->assignedTo[$key][0], $bugToTasks);
+        }
+    }
+    if(dao::isError()) return false;
+
+    foreach($tasks as $key => $task)
+    {
+        if(is_array($task))
+        {
+            $first = true;
+            foreach($task as $assignedTo => $taskData)
+            {
+                if($first)
+                {
+                    $bug = $taskData->bug;
+                    $this->confirmBug($bug);
+                }
+                unset($task->bug);
+                $this->createTask($taskData);
+                $taskID[] = $this->dao->lastInsertID();
+                if($first) $this->setStage($taskData);
+                $first = false;
+            }
+        }
+        else
+        {
+            $bug = $task->bug;
+            unset($task->bug);
+            $this->confirmBug($bug);
+            $this->createTask($taskData);
+            $taskID = $this->dao->lastInsertID();
+            $this->setStage($taskData);
+        }
+
+        $actionID = $this->loadModel('action')->create('task', $taskID, 'Opened', '');
+        $mails[$key] = new stdClass();
+        $mails[$key]->taskID  = $taskID;
+        $mails[$key]->actionID = $actionID;
+
+        $this->action->create('bug', $key, 'Totask', '', $taskID);
+        $this->dao->update(TABLE_BUG)->set('toTask')->eq($taskID)->where('id')->eq($key)->exec();
+
+        /* activate bug if bug postponed. */
+        if($bug->status == 'resolved' && $bug->resolution == 'postponed')
+        {
+            $newBug = new stdclass();
+            $newBug->lastEditedBy   = $this->app->user->account;
+            $newBug->lastEditedDate = $now;
+            $newBug->assignedDate   = $now;
+            $newBug->status         = 'active';
+            $newBug->resolvedDate   = '0000-00-00';
+            $newBug->resolution     = '';
+            $newBug->resolvedBy     = '';
+            $newBug->resolvedBuild  = '';
+            $newBug->closedBy       = '';
+            $newBug->closedDate     = '0000-00-00';
+            $newBug->duplicateBug   = '0';
+
+            $this->dao->update(TABLE_BUG)->data($newBug)->autoCheck()->where('id')->eq($key)->exec();
+            $this->dao->update(TABLE_BUG)->set('activatedCount = activatedCount + 1')->where('id')->eq($key)->exec();
+
+            $actionID = $this->action->create('bug', $key, 'Activated');
+            $changes  = common::createChanges($bug, $newBug);
+            $this->action->logHistory($actionID, $changes);
+        }
+
+        if(isset($task->assignedTo) and $task->assignedTo and $task->assignedTo != $bug->assignedTo)
+        {
+            $newBug = new stdClass();
+            $newBug->lastEditedBy   = $this->app->user->account;
+            $newBug->lastEditedDate = $now;
+            $newBug->assignedTo     = $task->assignedTo;
+            $newBug->assignedDate   = $now;
+            $this->dao->update(TABLE_BUG)->data($newBug)->where('id')->eq($key)->exec();
+            if(dao::isError()) return print(js::error(dao::getError()));
+            $changes = common::createChanges($bug, $newBug);
+
+            $actionID = $this->action->create('bug', $key, 'Assigned', '', $newBug->assignedTo);
+            $this->action->logHistory($actionID, $changes);
+        }
+    }
+
+    return $mails;
+}
+
+public function generateTaskData($projectID, $executionID, $bug, $key, $modules, $requiredFields, $now, $assignedTo, $bugToTasks)
+{
+    $task = new stdClass();
+    $task->bug          = $bug;
+    $task->project      = $projectID;
+    $task->execution    = $executionID;
+    $task->story        = $bug->story;
+    $task->storyVersion = $bug->storyVersion;
+    $task->module       = !empty($bugToTasks->module[$key]) ?: (isset($modules[$bug->module]) ? $bug->module : 0);
+    $task->fromBug      = $key;
+    $task->name         = $bug->title;
+    $task->type         = $bugToTasks->type[$key];
+    $task->pri          = $bugToTasks->pri[$key];
+    $task->estStarted   = $bugToTasks->estStarted[$key];
+    $task->deadline     = $bugToTasks->deadline[$key];
+    $task->estimate     = $bugToTasks->estimate[$key];
+    $task->consumed     = 0;
+    $task->assignedTo   = $assignedTo;
+    $task->mailto       = trim(implode(',', $bugToTasks->mailto[$key]), ',');
+    $task->status       = 'wait';
+    $task->openedDate   = $now;
+    $task->openedBy     = $this->app->user->account;
+    if($task->estimate !== '') $task->left = $task->estimate;
+    if(strpos($requiredFields, 'estStarted') !== false and helper::isZeroDate($task->estStarted)) $task->estStarted = '';
+    if(strpos($requiredFields, 'deadline') !== false and helper::isZeroDate($task->deadline)) $task->deadline = '';
+    if(!empty($assignedTo)) $task->assignedDate = $now;
+
+    foreach(explode(',', $requiredFields) as $field)
+    {
+        if(empty($field))         continue;
+        if(!isset($task->$field)) continue;
+        if(!empty($task->$field)) continue;
+
+        if($field == 'estimate' and strlen(trim($task->estimate)) != 0) continue;
+
+        dao::$errors['message'][] = sprintf($this->lang->error->notempty, $this->lang->task->$field);
+        return false;
+    }
+
+    if(!preg_match("/^[0-9]+(.[0-9]{1,3})?$/", $task->estimate) and !empty($task->estimate))
+    {
+        dao::$errors['message'][] = $this->lang->task->error->estimateNumber;
+        return false;
+    }
+    if(!empty($this->config->limitTaskDate))
+    {
+        $this->task->checkEstStartedAndDeadline($executionID, $task->estStarted, $task->deadline);
+        if(dao::isError()) return false;
+    }
+
+    return $task;
+}
+
+public function confirmBug($bug)
+{
+    if(!$bug->confirmed) $this->dao->update(TABLE_BUG)->set('confirmed')->eq(1)->where('id')->eq($bug->id)->exec();
+}
+
+public function createTask($task)
+{
+    $this->dao->insert(TABLE_TASK)->data($task)->checkIF($task->estimate != '', 'estimate', 'float')->exec();
+    if(dao::isError())
+    {
+        echo js::error(dao::getError());
+        return print(js::reload('parent'));
+    }
+}
+
+public function setStage($task)
+{
+    if($task->story != false) $this->story->setStage($task->story);
+}
+
+/**
+ * Import task from Bug.
+ *
+ * @param  int    $executionID
+ * @access public
+ * @return void
+ */
+public function importBug($executionID)
+{
+    $this->loadModel('bug');
+    $this->loadModel('task');
+    $this->loadModel('story');
+
+    $now = helper::now();
+
+    $showAllModule = isset($this->config->execution->task->allModule) ? $this->config->execution->task->allModule : '';
+    $modules       = $this->loadModel('tree')->getTaskOptionMenu($executionID, 0, 0, $showAllModule ? 'allModule' : '');
+
+    $execution      = $this->getByID($executionID);
+    $requiredFields = str_replace(',story,', ',', ',' . $this->config->task->create->requiredFields . ',');
+    $requiredFields = trim($requiredFields, ',');
+
+    $bugToTasks = fixer::input('post')->get();
+    $bugs       = $this->bug->getByList(array_keys($bugToTasks->import));
+    foreach($bugToTasks->import as $key => $value)
+    {
+        $bug = zget($bugs, $key, '');
+        if(empty($bug)) continue;
+
+        $task = new stdClass();
+        $task->bug          = $bug;
+        $task->project      = $execution->project;
+        $task->execution    = $executionID;
+        $task->story        = $bug->story;
+        $task->storyVersion = $bug->storyVersion;
+        $task->module       = !empty($bugToTasks->module[$key]) ? $bugToTasks->module[$key] : (isset($modules[$bug->module]) ? $bug->module : 0);
+        $task->fromBug      = $key;
+        $task->name         = $bug->title;
+        $task->type         = $bugToTasks->type[$key];
+        $task->pri          = $bugToTasks->pri[$key];
+        $task->estStarted   = $bugToTasks->estStarted[$key];
+        $task->deadline     = $bugToTasks->deadline[$key];
+        $task->estimate     = $bugToTasks->estimate[$key];
+        $task->consumed     = 0;
+        $task->assignedTo   = '';
+        $task->mailto       = trim(implode(',', $bugToTasks->mailto[$key]), ',');
+        $task->status       = 'wait';
+        $task->openedDate   = $now;
+        $task->openedBy     = $this->app->user->account;
+
+        if($task->estimate !== '') $task->left = $task->estimate;
+        if(strpos($requiredFields, 'estStarted') !== false and helper::isZeroDate($task->estStarted)) $task->estStarted = '';
+        if(strpos($requiredFields, 'deadline') !== false and helper::isZeroDate($task->deadline)) $task->deadline = '';
+        if(!empty($bugToTasks->assignedTo[$key]))
+        {
+            $task->assignedTo   = $bugToTasks->assignedTo[$key];
+            $task->assignedDate = $now;
+        }
+
+        /* Check task required fields. */
+        foreach(explode(',', $requiredFields) as $field)
+        {
+            if(empty($field))         continue;
+            if(!isset($task->$field)) continue;
+            if(!empty($task->$field)) continue;
+
+            if($field == 'estimate' and strlen(trim($task->estimate)) != 0) continue;
+
+            dao::$errors['message'][] = sprintf($this->lang->error->notempty, $this->lang->task->$field);
+            return false;
+        }
+
+        if(!preg_match("/^[0-9]+(.[0-9]{1,3})?$/", $task->estimate) and !empty($task->estimate))
+        {
+            dao::$errors['message'][] = $this->lang->task->error->estimateNumber;
+            return false;
+        }
+
+        if(!empty($this->config->limitTaskDate))
+        {
+            $this->task->checkEstStartedAndDeadline($executionID, $task->estStarted, $task->deadline);
+            if(dao::isError()) return false;
+        }
+
+        $tasks[$key] = $task;
+    }
+
+    foreach($tasks as $key => $task)
+    {
+        $bug = $task->bug;
+        unset($task->bug);
+
+        if(!$bug->confirmed) $this->dao->update(TABLE_BUG)->set('confirmed')->eq(1)->where('id')->eq($bug->id)->exec();
+        $this->dao->insert(TABLE_TASK)->data($task)->checkIF($task->estimate != '', 'estimate', 'float')->exec();
+
+        if(dao::isError())
+        {
+            echo js::error(dao::getError());
+            return print(js::reload('parent'));
+        }
+
+        $taskID = $this->dao->lastInsertID();
+        if($task->story != false) $this->story->setStage($task->story);
+        $actionID = $this->loadModel('action')->create('task', $taskID, 'Opened', '');
+        $mails[$key] = new stdClass();
+        $mails[$key]->taskID  = $taskID;
+        $mails[$key]->actionID = $actionID;
+
+        $this->action->create('bug', $key, 'Totask', '', $taskID);
+        $this->dao->update(TABLE_BUG)->set('toTask')->eq($taskID)->where('id')->eq($key)->exec();
+
+        /* activate bug if bug postponed. */
+        if($bug->status == 'resolved' && $bug->resolution == 'postponed')
+        {
+            $newBug = new stdclass();
+            $newBug->lastEditedBy   = $this->app->user->account;
+            $newBug->lastEditedDate = $now;
+            $newBug->assignedDate   = $now;
+            $newBug->status         = 'active';
+            $newBug->resolvedDate   = '0000-00-00';
+            $newBug->resolution     = '';
+            $newBug->resolvedBy     = '';
+            $newBug->resolvedBuild  = '';
+            $newBug->closedBy       = '';
+            $newBug->closedDate     = '0000-00-00';
+            $newBug->duplicateBug   = '0';
+
+            $this->dao->update(TABLE_BUG)->data($newBug)->autoCheck()->where('id')->eq($key)->exec();
+            $this->dao->update(TABLE_BUG)->set('activatedCount = activatedCount + 1')->where('id')->eq($key)->exec();
+
+            $actionID = $this->action->create('bug', $key, 'Activated');
+            $changes  = common::createChanges($bug, $newBug);
+            $this->action->logHistory($actionID, $changes);
+        }
+
+        if(isset($task->assignedTo) and $task->assignedTo and $task->assignedTo != $bug->assignedTo)
+        {
+            $newBug = new stdClass();
+            $newBug->lastEditedBy   = $this->app->user->account;
+            $newBug->lastEditedDate = $now;
+            $newBug->assignedTo     = $task->assignedTo;
+            $newBug->assignedDate   = $now;
+            $this->dao->update(TABLE_BUG)->data($newBug)->where('id')->eq($key)->exec();
+            if(dao::isError()) return print(js::error(dao::getError()));
+            $changes = common::createChanges($bug, $newBug);
+
+            $actionID = $this->action->create('bug', $key, 'Assigned', '', $newBug->assignedTo);
+            $this->action->logHistory($actionID, $changes);
+        }
+    }
+
+    return $mails;
+}

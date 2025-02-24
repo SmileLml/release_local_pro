@@ -16,6 +16,13 @@
 <?php js::set('effortDate',                      $effort->date);?>
 <?php js::set('objectType',                      $effort->objectType);?>
 <?php js::set('effortConsumed',                  $effort->consumed);?>
+<?php
+  if($effort->objectType == 'task')
+  {
+    js::set('taskConsumed', $consumed);
+    js::set('taskEstimate', $estimate);
+  }
+?>
 <?php js::set('noticeFinish',                    $lang->effort->noticeFinish);?>
 <?php js::set('hoursConsumed',                   $hoursConsumed);?>
 <?php js::set('hoursSurplus',                    $this->config->limitWorkHour - $hoursConsumed);?>

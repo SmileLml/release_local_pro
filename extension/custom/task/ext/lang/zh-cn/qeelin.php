@@ -8,3 +8,5 @@ $lang->task->batchComment->taskNoCanChange    = '任务#%s不可编辑';
 $lang->task->batchComment->taskNoAccessDenied = '任务#%s无权限';
 
 $lang->task->levelType = '任务分类';
+
+$lang->task->confirmCopy = '是否复制附件、备注？';

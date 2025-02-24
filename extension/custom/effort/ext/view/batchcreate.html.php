@@ -26,6 +26,7 @@
 <?php js::set('hoursSurplusTodayTitle', $lang->effort->hoursSurplusToday);?>
 <?php js::set('hoursConsumedTodayOtherTitle', $lang->effort->hoursConsumedTodayOther);?>
 <?php js::set('hoursSurplusTodayOtherTitle', $lang->effort->hoursSurplusTodayOther);?>
+<?php js::set('tasks', $tasks);?>
 <div class='cell'>
   <form class="modal-content load-indicator" method='post' target='hiddenwin' id="effortBatchAddForm">
     <div class="modal-header" id="effortBatchAddHeader">
@@ -67,21 +68,57 @@
             <th class='col-work required'><?php echo $lang->effort->work;?></th>
             <th class='col-objectType required'><?php echo $lang->effort->objectType;?></th>
             <th class='col-execution required'><?php echo $lang->effort->execution;?></th>
-            <th class='col-left required'><?php echo $lang->effort->left . '(' . $lang->effort->hour . ')';?></th>
             <th class='w-110px required'><?php echo $lang->effort->consumed . '(' . $lang->effort->hour . ')';?></th>
+            <th class='col-left required'><?php echo $lang->effort->left . '(' . $lang->effort->hour . ')';?></th>
             <th class='col-actions'></th>
           </tr>
         </thead>
         <tbody>
-          <?php $i = 1;?>
+        <?php $i = 1;?>
+          <?php foreach($actions as $action):?>
+          <tr class="effortBox computed">
+            <td class="col-id"><?php echo '<span class="effortID">' . $i . '</span>' . html::hidden("id[]", $i);?></td>
+            <td><?php echo html::input("work[]", $action->work, 'class="form-control" ' . (empty($action->work) ? '' : 'tabindex="9999"'));?></td>
+            <?php
+              if($action->objectType == 'task'):
+            ?>
+            <td style='overflow:visible' data-shadowtask="<?php echo $action->objectID; ?>">
+            <?php
+              elseif($action->objectType == 'bug'):
+            ?>
+            <td style='overflow:visible' data-shadowbug="<?php echo $action->objectID; ?>">
+            <?php
+              endif;
+            ?>
+              <?php
+              echo html::select("objectType[]", $typeList, "{$action->objectType}_{$action->objectID}", "class='form-control chosen' data-max_drop_width='548px' tabindex='9999'");
+              echo html::hidden("actionID[]", $action->id);
+              ?>
+            </td>
+            <td style='overflow:visible'>
+              <?php
+              $executionList   = $action->objectType == 'bug' ? $executionBug : $executionTask;
+              $actionExecution = $action->objectType == 'bug' ? "bug_$action->objectID" : "task_$action->objectID";
+              echo html::select("execution[$i]", $executions, $action->execution, "class='form-control chosen' tabindex='9999'");
+              ?>
+            </td>
+            <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control"');?></td>
+            <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
+            <td align='center'>
+              <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
+              <a href='javascript:;' onclick='deleteEffort(this)' tabindex="9999" class='btn btn-link btn-delete'><i class="icon icon-close"></i></a>
+            </td>
+          </tr>
+          <?php $i++;?>
+          <?php endforeach;?>
           <?php for($j = 0; $j < 8; $j++, $i++):?>
           <tr class="effortBox new">
             <td class="col-id"><?php echo '<span class="effortID">' . $i . '</span>' . html::hidden("id[]", $i);?></td>
             <td><?php echo html::input("work[]", '', 'class=form-control');?></td>
             <td style='overflow:visible'><?php echo html::select("objectType[]", $typeList, 'custom', "tabindex='9999' class='form-control chosen'");?></td>
             <td style='overflow:visible'><?php echo html::select("execution[$i]", $executions, 0, "tabindex='9999' class='form-control chosen'");?></td>
-            <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
             <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control"');?></td>
+            <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
             <td align='center'>
               <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
               <a href='javascript:;' onclick='deleteEffort(this)' tabindex="9999" class='btn btn-link btn-delete'><i class="icon icon-close"></i></a>

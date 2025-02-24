@@ -1,5 +1,5 @@
 $(function(){
-    var $prev = taskConsumed;
+    var $prev = typeof taskConsumed !== 'undefined' ? taskConsumed : 0;
     $('#consumed,#currentConsumed').keyup(function(){
         $current = $(this).val();
         $current = parseFloat(typeof($current) == 'undefined' ? 0 : $current);

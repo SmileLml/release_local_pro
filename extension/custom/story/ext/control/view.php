@@ -155,6 +155,7 @@ class mystory extends story
         $this->view->preAndNext    = $this->loadModel('common')->getPreAndNextObject('story', $storyID);
         $this->view->from          = $from;
         $this->view->param         = $param;
+        $this->view->storyType     = $story->type;
         $this->view->builds        = $this->loadModel('build')->getStoryBuilds($storyID);
         $this->view->releases      = $this->loadModel('release')->getStoryReleases($storyID);
         $this->display();

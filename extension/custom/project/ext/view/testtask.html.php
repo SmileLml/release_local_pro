@@ -12,6 +12,7 @@
 ?>
 <?php include $app->getModuleRoot() . 'common/view/header.html.php';?>
 <?php js::set('confirmDelete', $lang->testtask->confirmDelete)?>
+<?php js::set('projectID', $projectID)?>
 <?php if($project->hasProduct):?>
   <style>.table-footer {margin-left: 205px}</style>
 <?php endif;?>
@@ -75,7 +76,7 @@ $doneCount    = 0;
           <th class='c-date'><?php common::printOrderLink('end', $orderBy, $vars, $lang->testtask->end);?></th>
           <th class='c-status'><?php common::printOrderLink('status', $orderBy, $vars, $lang->statusAB);?></th>
           <?php if($canBeChanged):?>
-          <th class='c-actions-5 text-center'><?php echo $lang->actions;?></th>
+          <th class='c-actions-6 text-center'><?php echo $lang->actions;?></th>
           <?php endif;?>
         </tr>
         </thead>
@@ -129,6 +130,11 @@ $doneCount    = 0;
                 common::printIcon('testtask', 'linkCase', "taskID=$task->id", $task, 'list', 'link');
                 common::printIcon('project', 'testreport', "projectID=$task->project&objectType=project&extra=$task->id", '', 'list', 'summary', '', '', false, "data-app='project'", $this->lang->testreport->common);
                 common::printIcon('testtask', 'edit',   "taskID=$task->id", $task, 'list');
+                if(common::hasPriv('testtask', 'copy', $task))
+                {
+                  echo html::a("javascript:copyTesttask(\"$task->id\")", "<i class='icon-common-copy icon-copy'></i>", '', "data-app='project' class='btn'");
+                  echo html::a("#toCopy", "", '', "data-app='project' data-toggle='modal' id='model{$task->id}' class='btn hidden'");
+                }
                 common::printIcon('testtask', 'delete', "taskID=$task->id", $task, 'list', 'trash', 'hiddenwin');
                 ?>
               </td>
@@ -164,6 +170,30 @@ $doneCount    = 0;
       </div>
     </form>
   <?php endif;?>
+</div>
+<div class="modal fade" id="toCopy">
+  <div class="modal-dialog mw-500px select-project-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title"><?php echo $lang->testtask->copy;?></h4>
+      </div>
+      <div class="modal-body">
+        <table class='table table-form'>
+          <tr>
+            <th class=""><?php echo $lang->testtask->copyTesttaskNumber;?></th>
+            <?php echo html::hidden('copyTaskID'); ?>
+            <td class='required'><?php echo html::number('copyNumber', 1, "class='form-control' min='1' max='10' oninput='if(!/^[0-9]+$/.test(value)) value=value.replace(/\D/g,\"\");if(value>=10)value=10;if(value<0)value=null' ");?></td>
+          </tr>
+          <tr>
+            <td colspan='2' class='text-center'>
+              <?php echo html::commonButton($lang->testtask->nextStep, "id='toCopyButton'", 'btn btn-primary btn-wide');?>
+              <?php echo html::commonButton($lang->cancel, "id='cancelButton' data-dismiss='modal'", 'btn btn-default btn-wide');?>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 <?php js::set('pageSummary', sprintf($lang->testtask->allSummary, $total, $waitCount, $testingCount, $blockedCount, $doneCount));?>
 <?php js::set('checkedAllSummary', $lang->testtask->checkedAllSummary);?>
