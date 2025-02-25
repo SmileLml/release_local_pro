@@ -44,7 +44,7 @@
           <tr>
             <td class='text-left'><?php echo $i;?></td>
             <?php $name = $task->name . ($i == 10 ? "0" : "00") . $i; ?>
-            <td><?php echo $name;?></td>
+            <td><?php echo html::input("name[$i]", $name, "class='form-control'");?></td>
             <td><?php echo html::input("begin[$i]", $task->begin ?: '0000-00-00', 'size=4 class="form-control form-date"');?></td>
             <td><?php echo html::input("end[$i]", $task->end ?: '0000-00-00', 'size=4 class="form-control form-date"');?></td>
             <td><?php echo html::select("owner[$i]", $users, $task->owner, "class='form-control chosen'");?></td>

@@ -348,7 +348,7 @@ public function copy($task, $copyNumber)
     for($i = 1; $i <= $copyNumber; $i++)
     {
         $newTask              = new stdClass();
-        $newTask->name        = $task->name . ($i == 10 ? '0' : '00') . $i;
+        $newTask->name        = $tasks->name[$i];
         $newTask->project     = $task->project;
         $newTask->execution   = $task->execution;
         $newTask->product     = $task->product;
@@ -356,7 +356,7 @@ public function copy($task, $copyNumber)
         $newTask->desc        = $task->desc;
         $newTask->report      = $task->report;
         $newTask->testreport  = $task->testreport;
-        $newTask->status      = $task->status;
+        $newTask->status      = 'wait';
         $newTask->mailto      = $task->mailto;
         $newTask->autocount   = $task->autocount;
         $newTask->owner       = $tasks->owner[$i];
