@@ -310,7 +310,7 @@ class myTask extends task
                     $actions = $this->action->getList('task', $oldTaskID);
                     foreach($actions as $action)
                     {
-                        if($action->action == 'commented')
+                        if($action->action == 'commented' || (in_array($action->action, $this->config->task->copyActionCommentType) && !empty($action->comment)))
                         {
                             $copyAction             = new stdclass();
                             $copyAction->objectType = 'task';

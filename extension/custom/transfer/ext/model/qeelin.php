@@ -81,7 +81,7 @@ public function getQueryDatas($model = '')
             foreach($actions as $action)
             {
                 unset($action->history);
-                if($action->action == 'commented')
+                if($action->action == 'commented' || (in_array($action->action, $this->config->bug->exportActionCommentType) && !empty($action->comment)))
                 {
                     $action->actor = isset($users[$action->actor]) ? $users[$action->actor] : '';
                     $comments[$action->id] = $action;
