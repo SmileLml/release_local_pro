@@ -73,6 +73,7 @@ public function getQueryDatas($model = '')
 
     if($model == 'bug')
     {
+        $users = $this->user->getPairs('noletter');
         foreach($modelDatas as $row)
         {
             $actions = $this->loadModel('action')->getList('bug', $row->id);
@@ -80,7 +81,11 @@ public function getQueryDatas($model = '')
             foreach($actions as $action)
             {
                 unset($action->history);
-                if($action->action == 'commented') $comments[$action->id] = $action;
+                if($action->action == 'commented')
+                {
+                    $action->actor = isset($users[$action->actor]) ? $users[$action->actor] : '';
+                    $comments[$action->id] = $action;
+                }
             }
             $row->comments = $comments;
         }

@@ -56,16 +56,40 @@ class myaction extends action
 
             if(isset($_FILES['files']))
             {
-                $this->loadModel('file')->saveUpload(strtolower($objectType), $objectID);
-                $actionID = $this->action->create(strtolower($objectType), $objectID, 'Edited');
+                $changes = array();
+                if($objectType == 'task' || $objectType == 'bug')
+                {
+                    $oldObject = $this->loadModel($objectType)->getByID($objectID);
+                    $this->loadModel('file')->saveUpload(strtolower($objectType), $objectID);
+                    $newObject = $this->loadModel($objectType)->getByID($objectID);
+                    $oldObject->files = join(',', array_keys($oldObject->files));
+                    $newObject->files = join(',', array_keys($newObject->files));
+                    $changes  = common::createChanges($oldObject, $newObject);
+                }
+                elseif($objectType == 'story')
+                {
+                    $oldObject   = $this->loadModel($objectType)->getByID($objectID);
+                    $fileTitles  = $this->loadModel('file')->saveUpload(strtolower($oldObject->type), $objectID);
+                    $data        = new stdclass();
+                    $data->files = join(', ', array: array_keys($fileTitles)) . ', ' . trim(join(', ', array_keys($oldObject->files)), ',');
+                    $this->dao->update(TABLE_STORYSPEC)->data($data)->where('story')->eq((int)$objectID)->andWhere('version')->eq($oldObject->version)->exec();
+                    $newObject   = $this->loadModel($objectType)->getByID($objectID);
+                    $oldObject->files = trim(join(', ', array_keys($oldObject->files)), ',');
+                    $newObject->files = trim(join(', ', array_keys($newObject->files)), ',');
+                    $changes = common::createChanges($oldObject, $newObject);
+                }
 
+                $actionID = $this->action->create(strtolower($objectType), $objectID, 'Edited');
                 if(empty($actionID))
                 {
                     if($isInZinPage) return $this->send(array('result' => 'fail', 'message' => $this->lang->error->accessDenied));
                     return print(js::error($this->lang->error->accessDenied));
                 }
+                else
+                {
+                    $this->action->logHistory($actionID, $changes);
+                }
             }
-
             if($isInZinPage)
             {
                 return $this->send(array('status' => 'success', 'closeModal' => true, 'callback' => array('name' => 'zui.HistoryPanel.update', 'params' => array('objectType' => $objectType, 'objectID' => (int)$objectID))));

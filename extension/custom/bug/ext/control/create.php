@@ -547,14 +547,14 @@ class mybug extends bug
             /* If executionID is setted, get builds and stories of this execution. */
             if($executionID)
             {
-                $builds  = $this->loadModel('build')->getBuildPairs($productID, $branch, 'noempty,noterminate,nodone,noreleased', $executionID, 'execution');
+                $builds  = $this->loadModel('build')->getBuildPairs($productID, $branch ? $branch : 0, 'noempty,noterminate,nodone,noreleased', $executionID, 'execution');
                 $stories = $this->story->getExecutionStoryPairs($executionID);
                 if(!$projectID) $projectID = $this->dao->select('project')->from(TABLE_EXECUTION)->where('id')->eq($executionID)->fetch('project');
             }
             else
             {
                 $moduleID = $moduleID ? $moduleID : 0;
-                $builds   = $this->loadModel('build')->getBuildPairs($productID, $branch, 'noempty,noterminate,nodone,withbranch,noreleased');
+                $builds   = $this->loadModel('build')->getBuildPairs($productID, $branch ? $branch : 0, 'noempty,noterminate,nodone,withbranch,noreleased');
                 $stories  = $this->story->getProductStoryPairs($productID, $branch, $moduleID, 'all','id_desc', 0, 'full', 'story', false);
             }
 

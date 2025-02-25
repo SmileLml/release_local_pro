@@ -14,3 +14,4 @@ $lang->caselib->openedBy     = '由谁创建';
 $lang->caselib->openedDate   = '创建日期';
 $lang->caselib->version      = '用例版本';
 $lang->caselib->files        = '附件';
+$lang->caselib->purpose      = '测试目的';

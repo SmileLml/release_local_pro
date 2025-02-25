@@ -319,11 +319,11 @@ class myTask extends task
                             $copyAction->date       = $action->date;
                             $copyAction->comment    = $action->comment;
                             $copyAction->extra      = $action->extra;
+                            $copyAction             = $this->loadModel('file')->processImgURL($copyAction, 'comment');
                             $copyComment[]          = $copyAction;
                         }
                     }
                 }
-                
 
                 /* Create actions. */
                 foreach($tasksID as $taskID)

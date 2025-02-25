@@ -2729,7 +2729,7 @@ EOF;
         if($module == 'testcase' and $method == 'batchconfirmcaseupdate') $method = 'confirmlibcasechange';
         if($module == 'testcase' and $method == 'batchignorecaseupdate') $method = 'ignorelibcasechange';
         if($module == 'bug' and $method == 'batchsetdeadline') $method = 'batchedit';
-        if($module == 'action' and $method == 'batchComment') $method = 'comment';
+        if($module == 'action' and $method == 'batchcomment') $method = 'comment';
 
         /* If the user is doing a tutorial, have all tutorial privs. */
         if(defined('TUTORIAL'))

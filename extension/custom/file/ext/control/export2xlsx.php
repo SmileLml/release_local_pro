@@ -471,7 +471,7 @@ class myfile extends file
             /* 匹配img标签根据src获取图片id.*/
             $preg = '/ src="{([0-9]+)(\.(\w+))?}" /';
             preg_match($preg, $value, $match);
-            $imageID = $match[1];
+            $imageID = isset($match[1]) ? $match[1] : 0;
 
             /* 如果图片不存在 直接跳过. */
             if(!isset($files[$imageID])) continue;
@@ -716,7 +716,7 @@ class myfile extends file
         }
         /* Show header data. */
         $sheet3SheetData = '<row r="1" spans="1:5">';
-        foreach($excelKey as $key => $field) $sheet3SheetData .= $this->setCellValue($excelKey[$key], '1', $this->lang->excel->bugComment->$key, false);
+        foreach($excelKey as $key => $field) $sheet3SheetData .= $this->setCellValue($excelKey[$key], '1', $this->lang->excel->bugComment->$key, true);
         $sheet3SheetData .= '</row>';
 
         foreach($comments as $key => $value)
@@ -727,7 +727,7 @@ class myfile extends file
             foreach ($fields as $field)
             {
 
-                $sheet3SheetData .= $this->setCellValue($col, $row, $value->$field, false);
+                $sheet3SheetData .= $this->setCellValue($col, $row, $value->$field, true);
                 $col++;
             }
             $sheet3SheetData .= '</row>';

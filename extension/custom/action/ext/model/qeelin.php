@@ -2,6 +2,8 @@
 
 public function copyTaskComment($copyComment)
 {
+    $pattern     = '/\sonload="[^"]*"/';
+    $replacement = '';
     foreach($copyComment as $comment)
     {
         $action             = new stdclass();
@@ -12,7 +14,7 @@ public function copyTaskComment($copyComment)
         $action->date       = $comment->date;
         $action->extra      = $comment->extra;
         $action->vision     = $this->config->vision;
-        $action->comment    = fixer::stripDataTags($comment->comment);
+        $action->comment    = preg_replace($pattern, $replacement, $comment->comment);
         $relation           = $this->getRelatedFields($comment->objectType, $comment->objectID, $comment->action, $comment->extra);
         $action->product    = $relation['product'];
         $action->project    = (int)$relation['project'];
