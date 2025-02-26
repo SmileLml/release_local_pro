@@ -5,6 +5,13 @@
     <sheetView workbookViewId="0"/>
   </sheetViews>
   <sheetFormatPr defaultRowHeight="15"/>
+  <cols>
+    <col min="5" max="5" width="26" customWidth="1"/>
+    <col min="5" max="5" width="26" customWidth="1"/>
+    <col min="6" max="6" width="26" customWidth="1"/>
+    <col min="8" max="8" width="26" customWidth="1"/>
+    <col min="15" max="41" width="41" customWidth="1"/>
+  </cols>
   <sheetData>
     %s
   </sheetData>

@@ -785,6 +785,7 @@ public function importBug($executionID)
     $this->loadModel('task');
     $this->loadModel('story');
 
+    $tasks = array();
     $now = helper::now();
 
     $showAllModule = isset($this->config->execution->task->allModule) ? $this->config->execution->task->allModule : '';
@@ -809,7 +810,7 @@ public function importBug($executionID)
         $task->storyVersion = $bug->storyVersion;
         $task->module       = !empty($bugToTasks->module[$key]) ? $bugToTasks->module[$key] : (isset($modules[$bug->module]) ? $bug->module : 0);
         $task->fromBug      = $key;
-        $task->name         = $bug->title;
+        $task->name         = $bugToTasks->name[$key];
         $task->type         = $bugToTasks->type[$key];
         $task->pri          = $bugToTasks->pri[$key];
         $task->estStarted   = $bugToTasks->estStarted[$key];

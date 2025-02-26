@@ -437,7 +437,7 @@ class myfile extends file
      * @access public
      * @return void
      */
-    public function setImgData($row = 0, $col = 0, $content = '')
+    public function setImgData($row = 0, $col = 0, $content = '', $sheet = 'sheet1')
     {
         $files = $this->dao->select('*')->from(TABLE_FILE)->orderBy('id')->fetchAll('id');
         $row   = $row - 1;
@@ -520,8 +520,7 @@ class myfile extends file
                 $fileValue[$key] = preg_replace('/(<img[^>]*>)/i', "<p></p><p></p><p></p><p></p><p></p><p></p>", $fileValue[$key]);
             }
         }
-
-        $this->imgList[$row] = $list;
+        $this->imgList[$sheet][$row] = $list;
         $value = implode('</p>', $fileValue);
         return $value;
     }
@@ -690,7 +689,6 @@ class myfile extends file
             }
         }
     }
-
     public function writeCommentData()
     {
         $comments = array();
@@ -703,7 +701,7 @@ class myfile extends file
                 $row->title   = $data->title;
                 $row->actor   = $comment->actor;
                 $row->date    = $comment->date;
-                $row->comment = strip_tags($comment->comment);
+                $row->comment = $comment->comment;
                 $comments[] = $row;
             }
         }
@@ -716,7 +714,10 @@ class myfile extends file
         }
         /* Show header data. */
         $sheet3SheetData = '<row r="1" spans="1:5">';
-        foreach($excelKey as $key => $field) $sheet3SheetData .= $this->setCellValue($excelKey[$key], '1', $this->lang->excel->bugComment->$key, true);
+        foreach($excelKey as $key => $field)
+        {
+            $sheet3SheetData .= $this->setCellValue($excelKey[$key], '1', $this->lang->excel->bugComment->$key, true);
+        }
         $sheet3SheetData .= '</row>';
 
         foreach($comments as $key => $value)
@@ -724,9 +725,15 @@ class myfile extends file
             $col = 'A';
             $row = $key + 2;
             $sheet3SheetData .= '<row r="' . $row . '" spans="1:5">';
+            $i = 0;
             foreach ($fields as $field)
             {
-
+                if($field == 'comment')
+                {
+                    $value->$field = $this->setImgData($row, $i, $value->$field, 'sheet3');
+                    $value->$field = $this->file->excludeHtml($value->$field);
+                }
+                $i++;
                 $sheet3SheetData .= $this->setCellValue($col, $row, $value->$field, true);
                 $col++;
             }

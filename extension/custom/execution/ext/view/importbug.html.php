@@ -41,7 +41,7 @@
           </th>
           <th class='c-severity' title=<?php echo $lang->bug->severity;?>> <?php echo $lang->bug->severityAB;?></th>
           <th class='c-pri' title=<?php echo $lang->execution->pri;?>><?php echo $lang->priAB;?></th>
-          <th><?php echo $lang->bug->title;?></th>
+          <th><?php echo $lang->task->name;?></th>
           <th class='c-status'><?php echo $lang->bug->statusAB;?></th>
           <th class='c-pri-box <?php echo in_array('pri', $requiredFields) ? 'required' : ''?>'><?php echo $lang->task->pri;?></th>
           <th class='c-type-box <?php echo in_array('type', $requiredFields) ? 'required' : ''?>'><?php echo $lang->task->type;?></th>

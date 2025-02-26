@@ -74,6 +74,8 @@ public function getQueryDatas($model = '')
     if($model == 'bug')
     {
         $users = $this->user->getPairs('noletter');
+        $pattern     = '/\sonload="[^"]*"/';
+        $replacement = '';
         foreach($modelDatas as $row)
         {
             $actions = $this->loadModel('action')->getList('bug', $row->id);
@@ -84,6 +86,8 @@ public function getQueryDatas($model = '')
                 if($action->action == 'commented' || (in_array($action->action, $this->config->bug->exportActionCommentType) && !empty($action->comment)))
                 {
                     $action->actor = isset($users[$action->actor]) ? $users[$action->actor] : '';
+                    $action = $this->loadModel('file')->processImgURL($action, 'comment');
+                    $action->comment = preg_replace($pattern, $replacement, $action->comment);
                     $comments[$action->id] = $action;
                 }
             }
