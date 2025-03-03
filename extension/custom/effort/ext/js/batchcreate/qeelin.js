@@ -1,3 +1,4 @@
+var $prev = 0;
 $(function(){
     $('input[name=date]').change(function(){
         var date = $(this).val().replace(/\-/g, '');
@@ -65,74 +66,75 @@ $(function(){
         }, 'json');
     });
 
-    var $prev = 0;
-    $("input[name^=consumed]").keyup(function(){
-        $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
-        if(!$objectType)
-        {
-            alert(hoursConsumedNoObjectType);
-            $(this).val('');
-            return;
-        }
-        $current = $(this).val();
-        $current = parseFloat(typeof($current) == 'undefined' ? 0 : $current);
-        $current = isNaN($current) ? 0 : $current;
-        $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
-        if($objectType.indexOf('task_') >= 0 || $objectType.indexOf('bug_') >= 0)
-        {
-            if(limitWorkHour - (hoursConsumedToday + $current - $prev) < 0)
-            {
-                $(this).closest('td').next().find('input').val('');
-                if($('input[name=date]').val() == currentDate)
-                {
-                    alert(hoursConsumedTodayOverflow);
-                }
-                else
-                {
-                    alert(inputDate + hoursConsumedTodayOverflowOther);
-                }
-                $(this).val($prev ? $prev : '');
-                return;
-            }
+    // var $prev = 0;
+    // $("input[name^=consumed]").keyup(function(){
+    //     $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
+    //     console.log($(this));
+    //     if(!$objectType)
+    //     {
+    //         alert(hoursConsumedNoObjectType);
+    //         $(this).val('');
+    //         return;
+    //     }
+    //     $current = $(this).val();
+    //     $current = parseFloat(typeof($current) == 'undefined' ? 0 : $current);
+    //     $current = isNaN($current) ? 0 : $current;
+    //     $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
+    //     if($objectType.indexOf('task_') >= 0 || $objectType.indexOf('bug_') >= 0)
+    //     {
+    //         if(limitWorkHour - (hoursConsumedToday + $current - $prev) < 0)
+    //         {
+    //             $(this).closest('td').next().find('input').val('');
+    //             if($('input[name=date]').val() == currentDate)
+    //             {
+    //                 alert(hoursConsumedTodayOverflow);
+    //             }
+    //             else
+    //             {
+    //                 alert(inputDate + hoursConsumedTodayOverflowOther);
+    //             }
+    //             $(this).val($prev ? $prev : '');
+    //             return;
+    //         }
 
-            hoursConsumedToday = hoursConsumedToday + $current - $prev;
-            hoursConsumedToday = Math.round(hoursConsumedToday * 1000) / 1000;
-            hoursSurplusToday  = hoursSurplusToday  - $current + $prev;
-            hoursSurplusToday  = Math.round(hoursSurplusToday * 1000) / 1000;
-            $('.hoursConsumedToday').html(hoursConsumedToday + 'h');
-            $('.hoursSurplusToday').html(hoursSurplusToday + 'h');
+    //         hoursConsumedToday = hoursConsumedToday + $current - $prev;
+    //         hoursConsumedToday = Math.round(hoursConsumedToday * 1000) / 1000;
+    //         hoursSurplusToday  = hoursSurplusToday  - $current + $prev;
+    //         hoursSurplusToday  = Math.round(hoursSurplusToday * 1000) / 1000;
+    //         $('.hoursConsumedToday').html(hoursConsumedToday + 'h');
+    //         $('.hoursSurplusToday').html(hoursSurplusToday + 'h');
 
-            if($objectType.indexOf('task_') >= 0)
-            {
-                var taskID = $objectType.slice(5);
-                tasks[taskID].consumed = Math.round((tasks[taskID].consumed + $current - $prev) * 1000) / 1000;
-                var task = tasks[taskID];
-                var estimate = task.estimate;
-                var consumed = task.consumed;
-                if(estimate == 0 || estimate <= consumed)
-                {
-                    $(this).closest('td').next().find('input').val(0);
-                }
-                else
-                {
-                    $(this).closest('td').next().find('input').val(Math.round((estimate - consumed) * 1000) / 1000);
-                }
-            }
-            $prev = $(this).val();
-            $prev = parseFloat(typeof($prev) == 'undefined' ? 0 : $prev);
-            $prev = isNaN($prev) ? 0 : $prev;
-        }
-    });
+    //         if($objectType.indexOf('task_') >= 0)
+    //         {
+    //             var taskID = $objectType.slice(5);
+    //             tasks[taskID].consumed = Math.round((tasks[taskID].consumed + $current - $prev) * 1000) / 1000;
+    //             var task = tasks[taskID];
+    //             var estimate = task.estimate;
+    //             var consumed = task.consumed;
+    //             if(estimate == 0 || estimate <= consumed)
+    //             {
+    //                 $(this).closest('td').next().find('input').val(0);
+    //             }
+    //             else
+    //             {
+    //                 $(this).closest('td').next().find('input').val(Math.round((estimate - consumed) * 1000) / 1000);
+    //             }
+    //         }
+    //         $prev = $(this).val();
+    //         $prev = parseFloat(typeof($prev) == 'undefined' ? 0 : $prev);
+    //         $prev = isNaN($prev) ? 0 : $prev;
+    //     }
+    // });
 
-    $("input[name^=consumed]").focus(function(){
-        $prev = parseFloat(typeof($(this).val()) == 'undefined' ? 0 : $(this).val());
-        $prev = isNaN($prev) ? 0 : $prev;
-    });
+    // $("input[name^=consumed]").focus(function(){
+    //     $prev = parseFloat(typeof($(this).val()) == 'undefined' ? 0 : $(this).val());
+    //     $prev = isNaN($prev) ? 0 : $prev;
+    // });
 
-    $(document).on('change', 'select#objectType', function()
-    {
-        var $consumedInput = $(this).closest('td').next().next().find('input');
-    });
+    // $(document).on('change', 'select#objectType', function()
+    // {
+    //     var $consumedInput = $(this).closest('td').next().next().find('input');
+    // });
 });
 
 function cleanEffort()
@@ -184,18 +186,95 @@ function deleteEffort(clickedButton)
         {
             var taskID = $objectType.val().slice(5);
             tasks[taskID].consumed = Math.round((parseFloat(tasks[taskID].consumed) - workConsumed) * 1000) / 1000;
+            var oldConsumed = Math.round(parseFloat(tasks[taskID].oldConsumed) * 1000) / 1000;
+            var consumedAll = 0;
+            var id = $(clickedButton).closest('tr').find(' .col-id > input[name^=id]').val();
+
             $('#objectTable tbody tr select#objectType').each(function()
             {
                 var value = $(this).val();
-                // var $consumedInput = $(this).closest('td').next().next().find('input');
-                if(value.indexOf('task_') >= 0 && value.slice(5) == taskID)
+                if(value.indexOf('task_') >= 0 && value.slice(5) == taskID && $(this).closest('td').prev().prev().find('input[name^=id]').val() != id)
                 {
-                    var left = $(this).closest('td').next().next().next().find('input')
-                    left.val(Math.round((parseFloat(left.val()) + parseFloat(workConsumed)) * 1000) / 1000);
+                    var consumedInput = $(this).closest('td').next().next().find('input');
+                    var leftInput     = $(this).closest('td').next().next().next().find('input');
+                    var consumed      = Math.round((parseFloat(consumedInput.val()) * 1000)) / 1000;
+                    var left          = Math.round((parseFloat(leftInput.val()) * 1000)) / 1000;
+                    if(!isNaN(consumed) && typeof(consumed) != 'undefined' && !isNaN(left) && typeof(left) != 'undefined')
+                    {
+                        consumedAll += consumed;
+                        if((consumed + left + oldConsumed) != tasks[taskID].estimate)
+                        {
+                            $(this).closest('td').next().next().next().find('input').val(Math.round((tasks[taskID].estimate - oldConsumed - consumedAll) * 1000) / 1000);
+                        }
+                    }
                 }
             });
         }
     }
     $(clickedButton).parent().parent().remove();
     updateID();
+}
+
+function consumedKeyup(e)
+{
+    $objectType = $(e).closest('td').prev().prev().find('select#objectType').val();
+    if(!$objectType)
+    {
+        alert(hoursConsumedNoObjectType);
+        $(e).val('');
+        return;
+    }
+    $current = $(e).val();
+    $current = parseFloat(typeof($current) == 'undefined' ? 0 : $current);
+    $current = isNaN($current) ? 0 : $current;
+    $objectType = $(e).closest('td').prev().prev().find('select#objectType').val();
+    if($objectType.indexOf('task_') >= 0 || $objectType.indexOf('bug_') >= 0)
+    {
+        if(limitWorkHour - (hoursConsumedToday + $current - $prev) < 0)
+        {
+            $(e).closest('td').next().find('input').val('');
+            if($('input[name=date]').val() == currentDate)
+            {
+                alert(hoursConsumedTodayOverflow);
+            }
+            else
+            {
+                alert(inputDate + hoursConsumedTodayOverflowOther);
+            }
+            $(e).val($prev ? $prev : '');
+            return;
+        }
+        hoursConsumedToday = hoursConsumedToday + $current - $prev;
+        hoursConsumedToday = Math.round(hoursConsumedToday * 1000) / 1000;
+        hoursSurplusToday  = hoursSurplusToday  - $current + $prev;
+        hoursSurplusToday  = Math.round(hoursSurplusToday * 1000) / 1000;
+        $('.hoursConsumedToday').html(hoursConsumedToday + 'h');
+        $('.hoursSurplusToday').html(hoursSurplusToday + 'h');
+
+        if($objectType.indexOf('task_') >= 0)
+        {
+            var taskID = $objectType.slice(5);
+            tasks[taskID].consumed = Math.round((tasks[taskID].consumed + $current - $prev) * 1000) / 1000;
+            var task = tasks[taskID];
+            var estimate = task.estimate;
+            var consumed = task.consumed;
+            if(estimate == 0 || estimate <= consumed)
+            {
+                $(e).closest('td').next().find('input').val(0);
+            }
+            else
+            {
+                $(e).closest('td').next().find('input').val(Math.round((estimate - consumed) * 1000) / 1000);
+            }
+        }
+        $prev = $(e).val();
+        $prev = parseFloat(typeof($prev) == 'undefined' ? 0 : $prev);
+        $prev = isNaN($prev) ? 0 : $prev;
+    }
+}
+
+function consumedFocus(e)
+{
+    $prev = parseFloat(typeof($(e).val()) == 'undefined' ? 0 : $(e).val());
+    $prev = isNaN($prev) ? 0 : $prev;
 }

@@ -102,7 +102,7 @@
               echo html::select("execution[$i]", $executions, $action->execution, "class='form-control chosen' tabindex='9999'");
               ?>
             </td>
-            <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control"');?></td>
+            <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control" onkeyup="consumedKeyup(this)" onfocus="consumedFocus(this)"');?></td>
             <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
             <td align='center'>
               <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
@@ -117,7 +117,7 @@
             <td><?php echo html::input("work[]", '', 'class=form-control');?></td>
             <td style='overflow:visible'><?php echo html::select("objectType[]", $typeList, 'custom', "tabindex='9999' class='form-control chosen'");?></td>
             <td style='overflow:visible'><?php echo html::select("execution[$i]", $executions, 0, "tabindex='9999' class='form-control chosen'");?></td>
-            <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control"');?></td>
+            <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control" onkeyup="consumedKeyup(this)" onfocus="consumedFocus(this)"');?></td>
             <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
             <td align='center'>
               <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
