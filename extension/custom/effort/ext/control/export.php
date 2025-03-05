@@ -45,7 +45,10 @@ class myeffort extends effort
             $products   = array();
             $executions = array();
             $projects   = array();
-            $depts      = array();
+	        $depts      = array();
+
+            $fieldGetTitle = array();
+            $fieldGetName  = array();
 
             if(isset($fields['dept']))      $depts      = $this->loadModel('dept')->getOptionMenu();
             if(isset($fields['product']))   $products   = $this->loadModel('product')->getPairsForEffortExport();
