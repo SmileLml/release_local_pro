@@ -19,3 +19,5 @@ $lang->effort->hoursConsumedNoObjectType  = '需要先选择对象，再填写�
 $lang->effort->hoursConsumedTodayOverflowForTask = '本次填写任务工时已超过今日填报上限，请修改工时或填报日期后再保存';
 $lang->effort->hoursConsumedTodayOverflowForBug  = '本次填写BUG工时已超过今日填报上限，请修改工时或填报日期后再保存';
 $lang->effort->hoursConsumedTodayOverflowForALL  = '本次填写工时已超过%s填报上限，请修改工时或填报日期后再保存';
+
+$lang->effort->statisticsByMonth = '上月16日 - 本月15日 工时共计';

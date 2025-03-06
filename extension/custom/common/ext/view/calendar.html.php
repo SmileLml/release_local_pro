@@ -19,9 +19,10 @@ js::import($jsRoot . 'zui/calendar/zui.calendar.min.js');
 .calendar .event.with-action .action > a:hover {background-color: rgba(0,0,0,0.5)}
 td.cell-day {vertical-align: top !important;}
 .calendar .table>thead>tr>th {text-align:center !important; padding-bottom:2px !important;}
-.overworking {background:#22c98d !important;}
-.shortworking {background:#e7e605 !important;}
-.statistics {position: absolute;left:0; padding-left:20px; color: #838a9d;}
+/* .overworking {background:#22c98d !important;} */
+/* .shortworking {background:#e7e605 !important;} */
+.overworking {position: absolute; left:20px; border-radius: 5px; padding: 0px 4px; min-width: 18px; background: hsl(142, 40%, 60%); color: #838a9d;}
+.shortworking {position: absolute; left:20px; border-radius: 5px; padding: 0px 4px; min-width: 18px; background: rgb(242, 227, 8); color: #838a9d;}
 </style>
 <script>
 function exportCalendar(href)

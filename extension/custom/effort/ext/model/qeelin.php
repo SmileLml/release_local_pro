@@ -1237,3 +1237,21 @@ public function printCellExt($col, $effort, $mode = 'datatable', $executions = a
         echo '</td>';
     }
 }
+
+public function ajaxGetEffortsByMonth($account = '', $year = '', $month = '')
+{
+    $start = $year . '-' . $month - 1 . '-16';
+    $end   = $year . '-' . $month . '-15';
+    if($month == 1) $start = (string)($year - 1) . '-12-16';
+    if($account == '') $account = $this->app->user->account;
+    $efforts = $this->dao->select('t1.*,t2.dept')->from(TABLE_EFFORT)->alias('t1')
+            ->leftJoin(TABLE_USER)->alias('t2')->on('t1.account=t2.account')
+            ->beginIF($account != 'all')->where('t1.account')->eq($account)->fi()
+            ->andWhere('t1.date')->ge($start)
+            ->andWhere('t1.date')->le($end)
+            ->andWhere('t1.vision')->eq($this->config->vision)
+            ->andWhere('t1.deleted')->eq(0)
+            ->orderBy('date, id')
+            ->fetchAll('id');
+    return json_encode(array('statisticsByMonth' => array_sum(array_column($efforts, 'consumed'))));
+}

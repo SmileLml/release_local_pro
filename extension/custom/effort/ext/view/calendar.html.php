@@ -15,6 +15,10 @@
 <?php include '../../../common/ext/view/calendar.html.php';?>
 <?php js::set('limitWorkHour', $config->limitWorkHour);?>
 <?php js::set('limitWorkHour', 8);?>
+<style>
+    .statisticsByMonthParent {font-size: 16px;line-height: 20px;}
+    .statisticsByMonth {font-size: 16px;margin-right: 10px;line-height: 20px;border-radius: 9px;padding: 3px 7px;min-width: 18px;background: #FFEFEF;color: #FF6262;}
+</style>
 <div id="mainMenu" class="clearfix">
   <div class="btn-toolbar pull-left">
     <?php echo html::a('#', $lang->effort->effortCalendar, '', "class='btn btn-link'");?>
@@ -43,6 +47,8 @@
             <button type="button" class="btn btn-info btn-icon btn-mini btn-prev"><i class="icon-chevron-left"></i></button>
             <span id="date" class="calendar-caption"></span>
             <button type="button" class="btn btn-info btn-icon btn-mini btn-next"><i class="icon-chevron-right"></i></button>
+            <span class="statisticsByMonthParent"><?php echo $lang->effort->statisticsByMonth;?></span>
+            <span id="statisticsByMonth" class="statisticsByMonth">0H</span>
           </div>
         </header>
       </div>
@@ -50,11 +56,12 @@
   </div>
 </div>
 <script>
-config.ajaxGetEffortsUrl = '<?php echo $this->createLink('effort', 'ajaxGetEfforts', "userID={$this->app->user->id}&year={year}");?>';
-config.effortViewUrl     = '<?php echo $this->createLink('effort', 'view', 'id={id}', '', true);?>';
-config.batchAddUrl     	 = '<?php echo $this->createLink('effort', 'batchCreate', 'date={date}', '', true);?>';
-config.textNetworkError  = '<?php echo $lang->textNetworkError;?>';
-config.textHasMoreItems  = '<?php echo $lang->textHasMoreItems;?>';
+config.ajaxGetEffortsUrl        = '<?php echo $this->createLink('effort', 'ajaxGetEfforts', "userID={$this->app->user->id}&year={year}");?>';
+config.ajaxGetEffortsByMonthUrl = '<?php echo $this->createLink('effort', 'ajaxGetEffortsByMonth', "userID={$this->app->user->id}&year={year}&month={month}");?>';
+config.effortViewUrl            = '<?php echo $this->createLink('effort', 'view', 'id={id}', '', true);?>';
+config.batchAddUrl     	        = '<?php echo $this->createLink('effort', 'batchCreate', 'date={date}', '', true);?>';
+config.textNetworkError         = '<?php echo $lang->textNetworkError;?>';
+config.textHasMoreItems         = '<?php echo $lang->textHasMoreItems;?>';
 </script>
 <script>
 var effortViewModalTrigger = new $.zui.ModalTrigger(
@@ -82,6 +89,24 @@ $(function()
     {
         $calendar.toggleClass('loading', !!loading);
     };
+    var getEffortsByMonth = function(year, month)
+    {
+        $.ajax(
+            {
+                url: config.ajaxGetEffortsByMonthUrl.replace('{year}', year).replace('{month}',month),
+                dataType: 'json',
+                success: function(data)
+                {
+                    var text = (Math.round(parseFloat(data.statisticsByMonth) * 1000) / 1000) + 'H';
+                    $('#statisticsByMonth').text(text);
+                },
+                error: function()
+                {
+                    $.zui.messager.danger(config.textNetworkError);
+                },
+                complete: function() {toggleLoading(false);}
+            });
+    };
     calendar = $calendar.calendar(
     {
         dragThenDrop: false,
@@ -97,7 +122,10 @@ $(function()
         beforeDisplay: function(display, doDisplay)
         {
             var date = display.date;
-            var thisDisplayDate = date.getFullYear();
+            var thisDisplayDate  = date.getFullYear();
+
+            getEffortsByMonth(date.getFullYear(), date.getMonth() + 1);
+
             if (displayDate === thisDisplayDate)
             {
                 return doDisplay();
@@ -138,6 +166,7 @@ $(function()
         {
             var $cellHeader     = $cell.find('.day > .heading');
             var $showstatistics = $cellHeader.find('.statistics');
+
             if(dayEvents && dayEvents.maxPos >= minExpandCount)
             {
                 var hideManyEvents = !expandedDays[date.toDateString()];
@@ -146,20 +175,6 @@ $(function()
                 {
                     var $cellContent = $cell.find('.day > .content');
                     var $showMore = $cellContent.find('.show-more-events');
-                    var all = 0;
-                    $.each(dayEvents.events, function(index, effort){
-                        all += effort.consumed;
-                    });
-                    all = Math.round(parseFloat(all) * 1000) / 1000;
-                    if(!$showstatistics.length)
-                    {
-                        $cellHeader.append('<span class="statistics">' + all + 'h</span>');
-                    }
-                    else
-                    {
-                        $showstatistics.text(all + 'h');
-                    }
-
                     if(!$showMore.length)
                     {
                         $showMore = $('<div class="show-more-events" />').appendTo($cellContent);
@@ -173,35 +188,34 @@ $(function()
             }
             else
             {
-                if($cell.is('.past,.current'))
-                {
-                    if(!$showstatistics.length)
-                    {
-                        $cellHeader.append('<span class="statistics">0h</span>');
-                    }
-                }
-
                 $cell.removeClass('hide-many-events');
             }
 
             if($cell.is('.past,.current'))
             {
-                $cell.addClass('shortworking');
                 if(dayEvents)
                 {
                     var all = 0;
                     $.each(dayEvents.events, function(index, effort){
                         all += effort.consumed;
                     });
-
-                    if((Math.round(parseFloat(all) * 1000) / 1000) >= limitWorkHour)
+                    all = Math.round(parseFloat(all) * 1000) / 1000;
+                    var html = html = '<span class="statistics shortworking">' + all + 'h</span>';
+                    if(all >= limitWorkHour) html = '<span class="statistics overworking">' + all + 'h</span>';
+                    if(!$showstatistics.length)
                     {
-                        $cell.removeClass('shortworking');
-                        $cell.addClass('overworking');
+                        $cellHeader.append(html);
+                    }
+                    else
+                    {
+                        $showstatistics.replaceWith(html);
                     }
                 }
+                else if(!$showstatistics.length)
+                {
+                    $cellHeader.append('<span class="statistics shortworking">0h</span>');
+                }
             }
-
             if($cell.is('.past,.current')) $cell.addClass('with-plus-sign');
         },
         eventSorter: function(a, b)
@@ -247,18 +261,9 @@ $(function()
         $(this).css('background', 'unset');
     })
 
-    $('.btn-prev').click(function(e)
+    $('.btn-next,.btn-prev').click(function(e)
     {
-        $('.cell-day').removeClass('shortworking');
-        $('.cell-day').removeClass('overworking');
-        $('.statistics').remove()
-    })
-
-    $('.btn-next').click(function(e)
-    {
-        $('.cell-day').removeClass('shortworking');
-        $('.cell-day').removeClass('overworking');
-        $('.statistics').remove()
+        $('.statistics').remove();
     })
 });
 </script>
