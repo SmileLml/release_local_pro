@@ -179,20 +179,39 @@
           </td>
           <td class='text-center'>
             <div class='input-group'>
-              <?php echo html::input("consumed[$i]", '', "class='form-control text-center' autocomplete='off'");?>
+              <?php echo html::input("consumed[$i]", '', "class='form-control text-center' autocomplete='off' oninput='let value = this.value; if(!/^\d*\.?\d{0,2}$/.test(value)) { this.value = value.slice(0, value.indexOf(\".\") + 3); }'");?>
               <span class='input-group-addon'>h</span>
             </div>
           </td>
           <?php if($objectType == 'task'):?>
           <td class='text-center'>
             <div class='input-group'>
-              <?php echo html::input("left[$i]", $left, "class='form-control text-center' autocomplete='off' {$readonly}");?>
+              <?php echo html::input("left[$i]", $left, "class='form-control text-center' autocomplete='off' oninput='let value = this.value; if(!/^\d*\.?\d{0,2}$/.test(value)) { this.value = value.slice(0, value.indexOf(\".\") + 3); }' {$readonly}");?>
               <span class='input-group-addon'>h</span>
             </div>
           </td>
           <?php endif;?>
         </tr>
         <?php endfor;?>
+        <style>
+          .testPackageVersionRequired::after {
+            position: relative;
+            top: 3px;
+            right: auto;
+            left: 4px;
+            display: inline-block;
+            vertical-align: middle;
+            color: #fc5959;
+            content: '*';
+            box-sizing: border-box;
+            font-weight: 400;
+            font-size: 20px;
+          }
+        </style>
+        <tr id='testPackageVersionID' style='display:none;'>
+          <th colspan='2' class='testPackageVersionRequired'><?php echo isset($lang->task->testPackageVersion) ? $lang->task->testPackageVersion : '';?></th>
+          <td><?php echo html::input("testPackageVersion", $task->testPackageVersion, "class='form-control' autocomplete='off'");?></td>
+        </tr>
       </tbody>
     </table>
     <div class='table-footer text-center form-actions'>

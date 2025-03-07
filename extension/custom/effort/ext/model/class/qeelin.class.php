@@ -61,7 +61,6 @@ class qeelinEffort extends effortModel
             {
                 if($efforts->objectType[$id] == 'task' and (empty($efforts->dates[$num]) or helper::isZeroDate($efforts->dates[$num])) and (empty($efforts->date) or helper::isZeroDate($efforts->date))) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->error->dateEmpty));
                 if($efforts->objectType[$id] == 'task' and isset($efforts->dates[$num]) and $efforts->dates[$num] > $today) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->error->date));
-
                 $efforts->work[$id] = trim($efforts->work[$id]);
                 if(empty($efforts->work[$id]))           die(js::alert(sprintf($this->lang->effort->nowork, $efforts->id[$id])));
                 if(!is_numeric($efforts->consumed[$id])) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->consumed . $this->lang->effort->isNumber));
@@ -71,8 +70,10 @@ class qeelinEffort extends effortModel
                 if($consumed < 0)    die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->consumed . $this->lang->effort->notNegative));
 
                 $left = isset($efforts->left[$num]) ? $efforts->left[$num] : '';
+
                 if(!empty($left) and !is_numeric($left)) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->isNumber));
                 if(!empty($left) and $left < 0)          die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->notNegative));
+                if($efforts->objectType[$id] == 'task' and $left == 0 and (!isset($efforts->testPackageVersion) or empty($efforts->testPackageVersion))) die(js::alert($this->lang->task->testPackageVersion . $this->lang->effort->notEmpty));
                 if($efforts->objectType[$id] == 'task' and !$nonRDUser and empty($left) and !is_numeric($left))  die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->notEmpty));
                 if($efforts->objectType[$id] == 'bug')
                 {
@@ -215,6 +216,7 @@ class qeelinEffort extends effortModel
                 $newTask->consumed      += $effort->consumed;
                 $newTask->lastEditedBy   = $this->app->user->account;
                 $newTask->lastEditedDate = $now;
+                if(isset($efforts->testPackageVersion) and !empty($efforts->testPackageVersion)) $newTask->testPackageVersion = $efforts->testPackageVersion;
                 if(helper::isZeroDate($task->realStarted)) $newTask->realStarted = $now;
 
                 if(empty($lastDatePairs[$taskID]) or $lastDatePairs[$taskID] <= $effort->date)

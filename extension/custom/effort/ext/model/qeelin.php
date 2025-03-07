@@ -1129,7 +1129,7 @@ public function getAccountStatistics($account = '', $date = 'today')
     $consumed = 0;
     foreach($efforts as $effort) $consumed += $effort->consumed;
 
-    return $consumed;
+    return ceil($consumed * 100) / 100;
 }
 
 public function printCellExt($col, $effort, $mode = 'datatable', $executions = array())
