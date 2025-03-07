@@ -71,8 +71,8 @@ class myeffort extends effort
         {
             $object     = $this->dao->findById($effort->objectID)->from(TABLE_TASK)->fetch();
             $objectName = $object->name;
-            $this->view->consumed = $object->consumed;
-            $this->view->estimate = $object->estimate;
+            $this->view->consumed = ceil($object->consumed * 100) / 100;
+            $this->view->estimate = ceil($object->estimate * 100) / 100;
         }
         if($effort->objectType == 'bug')   $objectName = $this->dao->findById($effort->objectID)->from(TABLE_BUG)->fetch('title');
 

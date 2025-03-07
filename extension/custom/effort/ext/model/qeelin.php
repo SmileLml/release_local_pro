@@ -1056,6 +1056,7 @@ public function update($effortID)
         ->setDefault('account', $oldEffort->account)
         ->cleanInt('objectID')
         ->join('product', ',')
+        ->remove('testPackageVersion')
         ->get();
 
     if(!empty($effort->product)) $effort->product = ',' . $effort->product . ',';
@@ -1076,7 +1077,12 @@ public function update($effortID)
 
     if($effort->consumed <= 0) die(js::alert(sprintf($this->lang->error->gt, $this->lang->effort->consumed, '0')));
     if($effort->left < 0)      die(js::alert($this->lang->effort->left . $this->lang->effort->notNegative));
-
+    if($effort->objectType == 'task' && $effort->left == 0)
+    {
+        $task = $this->dao->findById($effort->objectID)->from(TABLE_TASK)->fetch();
+        $testPackageVersion = $this->post->testPackageVersion;
+        if($task->status == 'done' && (!isset($testPackageVersion) || empty($testPackageVersion))) die(js::alert($this->lang->task->testPackageVersion . $this->lang->effort->notEmpty));
+    }
     if($effort->date > helper::now()) die(js::alert($this->lang->effort->notFuture));
     $oldEffortDate = is_numeric($oldEffort->date) ? substr($oldEffort->date, 0, 4) . '-' . substr($oldEffort->date, 4, 2) . '-' . substr($oldEffort->date, 6, 2) : $oldEffort->date;
     if($oldEffortDate == $effort->date)
@@ -1105,6 +1111,13 @@ public function update($effortID)
                 ->exec();
         }
 
+        if($effort->objectType == 'task' && isset($testPackageVersion))
+        {
+            $this->dao->update(TABLE_TASK)->set('testPackageVersion')->eq($testPackageVersion)
+                ->set('lastEditedBy')->eq($this->app->user->account)
+                ->where('id')->eq($effort->objectID)
+                ->exec();
+        }
         $changes = common::createChanges($oldEffort, $effort);
         if($changes) $this->changeTaskConsumed($effort, 'add', $oldEffort);
         if($oldEffort->objectType == 'task' and $oldEffort->objectID != $effort->objectID) $this->changeTaskConsumed($oldEffort, 'delete');

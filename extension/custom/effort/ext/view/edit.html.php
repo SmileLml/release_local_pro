@@ -21,6 +21,8 @@
   {
     js::set('taskConsumed', $consumed);
     js::set('taskEstimate', $estimate);
+    js::set('task', $task);
+    js::set('effort', $effort);
   }
 ?>
 <?php js::set('noticeFinish',                    $lang->effort->noticeFinish);?>
@@ -54,7 +56,7 @@
       <table class='table table-form'>
         <?php if($effort->objectType == 'task'):?>
         <tr id='productBox'<?php if(empty($project->hasProduct) || $this->config->vision == 'or') echo "class='hide'";?>>
-          <th class='w-80px'><?php echo $lang->effort->product;?></th>
+          <th class='w-100px'><?php echo $lang->effort->product;?></th>
           <td class='w-p45'><?php echo html::select('product[]', $products, $effort->product, 'class="form-control chosen" multiple' . (!$canBeChanged ? ' disabled' : ''));?></td><td></td>
         </tr>
         <?php endif;?>
@@ -68,13 +70,17 @@
         </tr>
         <tr>
           <th><?php echo $lang->effort->consumed;?></th>
-          <td class='required'><?php echo html::input('consumed', $effort->consumed, 'class="form-control" autocomplete="off"'  . (!$canBeChanged ? ' disabled' : ''));?></td>
+          <td class='required'><?php echo html::input('consumed', $effort->consumed, "class='form-control' autocomplete='off' oninput='let value = this.value; if(!/^\d*\.?\d{0,2}$/.test(value)) { this.value = value.slice(0, value.indexOf(\".\") + 3); }' "  . (!$canBeChanged ? ' disabled' : ''));?></td>
         </tr>
         <tr>
           <th><?php echo $lang->effort->left;?></th>
           <?php $readonly = $recentDateID === $effort->id ? '' : 'readonly';?>
           <?php if($effort->objectType == 'task' and !empty($task->team) and $effort->left == 0) $readonly = 'readonly';?>
-          <td><?php echo html::input('left', $effort->left, "class='form-control' autocomplete='off' $readonly"  . (!$canBeChanged ? ' disabled' : ''));?></td>
+          <td><?php echo html::input('left', $effort->left, "class='form-control' autocomplete='off' oninput='let value = this.value; if(!/^\d*\.?\d{0,2}$/.test(value)) { this.value = value.slice(0, value.indexOf(\".\") + 3); }' $readonly"  . (!$canBeChanged ? ' disabled' : ''));?></td>
+        </tr>
+        <tr id='testPackageVersionID' style='display:none;'>
+          <th><?php echo $lang->task->testPackageVersion;?></th>
+          <td class='required'><?php echo html::input('testPackageVersion', $task->testPackageVersion, 'class="form-control" autocomplete="off"' . (!$canBeChanged ? ' disabled' : ''));?></td>
         </tr>
         <tr>
           <th><?php echo $lang->effort->work;?></th>

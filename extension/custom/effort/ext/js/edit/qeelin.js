@@ -1,4 +1,5 @@
 $(function(){
+    if(objectType == 'task' && task.status == 'done' && effort.left == 0) testPackageVersionInput(true)
     var $prev = effortConsumed;
     $('#consumed').keyup(function(){
         $current = $(this).val();
@@ -19,9 +20,9 @@ $(function(){
         }
 
         hoursConsumed = hoursConsumed + $current - $prev;
-        hoursConsumed = Math.round(hoursConsumed * 1000) / 1000;
+        hoursConsumed = Math.round(hoursConsumed * 100) / 100;
         hoursSurplus  = hoursSurplus  - $current + $prev;
-        hoursSurplus  = Math.round(hoursSurplus * 1000) / 1000;
+        hoursSurplus  = Math.round(hoursSurplus * 100) / 100;
         $('.hoursConsumed').html(hoursConsumed + 'h');
         $('.hoursSurplus').html(hoursSurplus + 'h');
 
@@ -31,10 +32,12 @@ $(function(){
             if(taskEstimate == 0 || taskEstimate <= taskConsumed)
             {
                 $('#left').val(0);
+                if(task.status == 'done') testPackageVersionInput(true);
             }
             else
             {
-                $('#left').val(Math.round((taskEstimate - taskConsumed) * 1000) / 1000);
+                testPackageVersionInput(false);
+                $('#left').val(Math.round((taskEstimate - taskConsumed) * 100) / 100);
             }
         }
         $prev = $(this).val();
@@ -52,7 +55,7 @@ $(function(){
         {
             if(typeof(data) == 'number')
             {
-                var inputAll = Math.round($('#consumed').val() * 1000) / 1000;
+                var inputAll = Math.round($('#consumed').val() * 100) / 100;
 
                 if(inputDate == effortDate)
                 {
@@ -85,4 +88,27 @@ $(function(){
             }
         }, 'json');
     });
+
+    $("input[name^=left]").keyup(function(){
+        if($(this).val() == 0 && task.status == 'done')
+        {
+            testPackageVersionInput(true);
+        }
+        else
+        {
+            testPackageVersionInput(false);
+        }
+    });
 });
+
+function testPackageVersionInput(show)
+{
+    if(show)
+    {
+        $('#testPackageVersionID').show();
+    }
+    else
+    {
+        $('#testPackageVersionID').hide();
+    }
+}
