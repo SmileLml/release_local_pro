@@ -248,6 +248,7 @@ class mybug extends bug
         $this->view->executionID     = $executionID;
         $this->view->builds          = $builds;
         $this->view->projectExecutionPairs = $this->loadModel('project')->getProjectExecutionPairs();
+        $this->view->products        = array('' => '') + $this->view->products;
         $this->display();
     }
 }

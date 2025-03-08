@@ -50,6 +50,7 @@ js::set('released',       $lang->build->released);
 js::set('kanbanLang',     $lang->bug->kanban);
 js::set('executionLang',  $lang->bug->execution);
 js::set('projectLang',    $lang->bug->project);
+js::set('productLang',    $lang->bug->product);
 js::set('noempty',        $lang->bug->noempty);
 js::set('bugOpenedBuild', $lang->bug->openedBuild);
 js::set('checkedNull',      $lang->bug->batchComment->checkedNull);
@@ -404,6 +405,8 @@ $currentBrowseType = isset($lang->bug->mySelects[$browseType]) && in_array($brow
                   <?php
                     if($canBatchAdjust)
                     {
+                      echo html::hidden('adjustProduct', '');
+                      echo html::hidden('adjustBranch', '');
                       echo html::hidden('adjustProject', '');
                       echo html::hidden('adjustExecution', '');
                       echo html::hidden('adjustBuild', '');
@@ -466,17 +469,24 @@ $currentBrowseType = isset($lang->bug->mySelects[$browseType]) && in_array($brow
           <table class='table table-form'>
             <tbody>
               <tr>
-                <th><?php echo $lang->bug->project;?></th>
+                <th style='width:150px'><?php echo $lang->bug->product;?></th>
+                <td class="required">
+                  <div class='input-group'>
+                    <?php echo html::select('product', $products, '', "onchange='loadProductBranches(this.value);' class='form-control chosen control-product'");?>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <th><?php echo $lang->bug->project . '/' . $lang->execution->common;?></th>
                 <td class="required">
                   <div class='table-row'>
                     <div class='table-col' id='projectBox'>
-                      <?php echo html::select('project', $projects, $projectID, "class='form-control chosen' onchange='loadProductExecutions({$productID}, this.value)'");?>
+                      <?php echo html::select('project', [], '', "class='form-control chosen' onchange=''");?>
                     </div>
-                    <?php $executionClass = !$showExecution ? 'hidden' : '';?>
-                    <div class="table-col executionBox <?php echo $executionClass;?>">
+                    <div class="table-col executionBox hidden">
                       <div class='input-group' id='executionIdBox'>
-                        <span class='input-group-addon fix-border' id='executionBox'><?php echo $projectModel == 'kanban' ? $lang->bug->kanban : $lang->bug->execution;?></span>
-                        <?php echo html::select('execution', $executions, $executionID, "class='form-control chosen' onchange='loadExecutionRelated(this.value)'");?>
+                        <span class='input-group-addon fix-border' id='executionBox'></span>
+                        <?php echo html::select('execution', [], '', "class='form-control chosen' onchange=''");?>
                       </div>
                     </div>
                   </div>
@@ -486,7 +496,7 @@ $currentBrowseType = isset($lang->bug->mySelects[$browseType]) && in_array($brow
                 <th><?php echo $lang->bug->openedBuild;?></th>
                 <td class="required">
                   <div class='input-group' id='buildBox'>
-                    <?php echo html::select('openedBuild[]', $builds, '', "multiple=multiple class='picker-select form-control' data-items='" . count($builds) . "'");?>
+                    <?php echo html::select('openedBuild[]', [], '', "multiple=multiple class='picker-select form-control' data-items='" . count($builds) . "'");?>
                   </div>
                 </td>
               </tr>

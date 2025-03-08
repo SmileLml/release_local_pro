@@ -63,6 +63,24 @@ public function printCell($col, $project, $users, $programID = 0)
             $title = "title='$budgetTitle'";
         }
 
+        if($id == 'realBegan')
+        {
+            $class .= ' c-name';
+            $title  = "title='{$project->realBegan}'";
+        }
+
+        if($id == 'realEnd')
+        {
+            $class .= ' c-name';
+            $title  = "title='{$project->realEnd}'";
+        }
+
+        if($id == 'closedDate')
+        {
+            $class .= ' c-name';
+            $title  = "title='{$project->closedDate}'";
+        }
+
         if($id == 'estimate') $title = "title='{$project->estimate} {$this->lang->execution->workHour}'";
         if($id == 'consume')  $title = "title='{$project->consumed} {$this->lang->execution->workHour}'";
         if($id == 'surplus')  $title = "title='{$project->left} {$this->lang->execution->workHour}'";
@@ -105,6 +123,15 @@ public function printCell($col, $project, $users, $programID = 0)
                 break;
             case 'end':
                 echo $project->end;
+                break;
+            case 'realBegan':
+                echo $project->realBegan;
+                break;
+            case 'realEnd':
+                echo $project->realEnd;
+                break;
+            case 'closedDate':
+                echo $project->closedDate;
                 break;
             case 'status':
                 echo "<span class='status-task text-center  status-{$project->status}'> " . zget($this->lang->project->statusList, $project->status) . "</span>";

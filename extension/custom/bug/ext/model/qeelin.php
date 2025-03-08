@@ -177,7 +177,7 @@ public function batchSetAdjust()
             $bug->id             = $bugID;
             $bug->lastEditedBy   = $this->app->user->account;
             $bug->lastEditedDate = $now;
-            if($this->app->tab != 'qa')
+            /* if($this->app->tab != 'qa') */
             {
                 $bug->product    = $data->adjustProduct;
                 $bug->branch     = empty($data->adjustBranch) ? 0 : $data->adjustBranch;
