@@ -165,3 +165,247 @@ public function printCell($col, $project, $users, $programID = 0)
         echo '</td>';
     }
 }
+
+/**
+ * Manage team members.
+ *
+ * @param  int    $projectID
+ * @access public
+ * @return void
+ */
+public function manageMembers($projectID)
+{
+    $project = $this->getByID($projectID);
+    $data    = (array)fixer::input('post')->get();
+
+    extract($data);
+    $projectID   = (int)$projectID;
+    $projectType = 'project';
+    $accounts    = array_unique($accounts);
+    $oldJoin     = $this->dao->select('`account`, `join`, `role`')->from(TABLE_TEAM)->where('root')->eq($projectID)->andWhere('type')->eq($projectType)->fetchAll('account');
+
+    foreach($accounts as $key => $account)
+    {
+        if(empty($account)) continue;
+
+        if(!empty($project->days) and (int)$days[$key] > $project->days)
+        {
+            dao::$errors['message'][]  = sprintf($this->lang->project->daysGreaterProject, $project->days);
+            return false;
+        }
+        if((float)$hours[$key] > 24)
+        {
+            dao::$errors['message'][]  = $this->lang->project->errorHours;
+            return false;
+        }
+    }
+
+    $this->dao->delete()->from(TABLE_TEAM)->where('root')->eq($projectID)->andWhere('type')->eq($projectType)->exec();
+    $projectMember = array();
+    $addMembers    = array();
+    $updateMembers = array();
+    foreach($accounts as $key => $account)
+    {
+        if(empty($account)) continue;
+
+        $member          = new stdclass();
+        $member->role    = $roles[$key];
+        $member->days    = $days[$key];
+        $member->hours   = $hours[$key];
+        $member->limited = isset($limited[$key]) ? $limited[$key] : 'no';
+
+        $member->root    = $projectID;
+        $member->account = $account;
+        $member->join    = isset($oldJoin[$account]) ? $oldJoin[$account]->join : helper::today();
+        $member->type    = $projectType;
+
+        $projectMember[$account] = $member;
+        if(!isset($oldJoin[$account])) $addMembers[$account] = $roles[$key];
+        if(isset($oldJoin[$account]) && $roles[$key] != $oldJoin[$account]->role) $updateMembers[$account] = $roles[$key];
+        $this->dao->insert(TABLE_TEAM)->data($member)->exec();
+    }
+
+    /* Only changed account update userview. */
+    $oldAccounts     = array_keys($oldJoin);
+    $removedAccounts = array_diff($oldAccounts, $accounts);
+    $changedAccounts = array_merge($removedAccounts, array_diff($accounts, $oldAccounts));
+    $changedAccounts = array_unique($changedAccounts);
+
+    $childSprints   = $this->dao->select('id')->from(TABLE_PROJECT)->where('project')->eq($projectID)->andWhere('type')->in('stage,sprint')->andWhere('deleted')->eq('0')->fetchPairs();
+    $linkedProducts = $this->dao->select("t2.id")->from(TABLE_PROJECTPRODUCT)->alias('t1')
+        ->leftJoin(TABLE_PRODUCT)->alias('t2')->on('t1.product = t2.id')
+        ->where('t2.deleted')->eq(0)
+        ->andWhere('t1.project')->eq($projectID)
+        ->andWhere("FIND_IN_SET('{$this->config->vision}', t2.vision)")
+        ->fetchPairs();
+
+    $this->loadModel('user')->updateUserView(array($projectID), 'project', $changedAccounts);
+    if(!empty($childSprints))
+    {
+        $this->user->updateUserView($childSprints, 'sprint', $changedAccounts);
+        $this->updateExecutionMembers($childSprints, $addMembers, $updateMembers);
+    }
+    if(!empty($linkedProducts)) $this->user->updateUserView(array_keys($linkedProducts), 'product', $changedAccounts);
+
+    /* Remove execution members. */
+    if($this->post->removeExecution == 'yes' and !empty($childSprints) and !empty($removedAccounts))
+    {
+        $this->dao->delete()->from(TABLE_TEAM)
+            ->where('root')->in($childSprints)
+            ->andWhere('type')->eq('execution')
+            ->andWhere('account')->in($removedAccounts)
+            ->exec();
+    }
+
+    if(empty($project->multiple) and $project->model != 'waterfall') $this->loadModel('execution')->syncNoMultipleSprint($projectID);
+}
+
+/**
+ * Add the execution team members to the project.
+ *
+ * @param  int    $projectID
+ * @param  array  $members
+ * @access public
+ * @return void
+ */
+public function updateExecutionMembers($childSprints, $addMembers, $updateMembers)
+{
+    $this->loadModel('execution');
+    foreach($childSprints as $executionID)
+    {
+        $action       = false;
+        $executionID  = (int)$executionID;
+        $execution    = $this->dao->findById($executionID)->from(TABLE_EXECUTION)->fetch();
+        $oldJoin      = $this->dao->select('`id`, `account`')->from(TABLE_TEAM)->where('root')->eq($executionID)->andWhere('type')->eq('execution')->fetchAll('account');
+        foreach($addMembers as $account => $role)
+        {
+            if(empty($account)) continue;
+            $action = true;
+            if(!isset($oldJoin[$account]))
+            {
+                $member          = new stdclass();
+                $member->root    = (int)$executionID;
+                $member->role    = $role;
+                $member->join    = helper::today();
+                $member->days    = zget($execution, 'days', 0);
+                $member->type    = 'execution';
+                $member->hours   = $this->config->execution->defaultWorkhours;
+                $member->account = $account;
+                $this->dao->insert(TABLE_TEAM)->data($member)->exec();
+            }
+            else
+            {
+                $this->dao->update(TABLE_TEAM)->set('`role`')->eq($role)->where('id')->eq($oldJoin[$account]->id)->exec();
+            }
+        }
+
+        foreach($updateMembers as $account => $role)
+        {
+            if(!isset($oldJoin[$account])) continue;
+            $action = true;
+            $this->dao->update(TABLE_TEAM)->set('`role`')->eq($role)->where('id')->eq($oldJoin[$account]->id)->exec();
+        }
+        if($action) $this->loadModel('action')->create('team', $executionID, 'managedTeam');
+        if($addMembers && $execution->acl != 'open') $this->execution->updateUserView($executionID, 'sprint', array_keys($addMembers));
+    }
+}
+
+/**
+ * Build project browse action menu.
+ *
+ * @param  object $project
+ * @access public
+ * @return string
+ */
+public function buildOperateBrowseMenu($project)
+{
+    $menu   = '';
+    $params = "projectID=$project->id";
+
+    $moduleName = "project";
+    if($project->status == 'wait' || $project->status == 'suspended')
+    {
+        $menu .= $this->buildMenu($moduleName, 'start', $params, $project, 'browse', 'play', '', 'iframe', true);
+    }
+    if($project->status == 'doing')  $menu .= $this->buildMenu($moduleName, 'close',    $params, $project, 'browse', 'off',   '', 'iframe', true);
+    if($project->status == 'closed') $menu .= $this->buildMenu($moduleName, 'activate', $params, $project, 'browse', 'magic', '', 'iframe', true);
+
+    if(common::hasPriv($moduleName, 'suspend') || (common::hasPriv($moduleName, 'close') && $project->status != 'doing') || (common::hasPriv($moduleName, 'activate') && $project->status != 'closed'))
+    {
+        $menu .= "<div class='btn-group'>";
+        $menu .= "<button type='button' class='btn icon-caret-down dropdown-toggle' data-toggle='context-dropdown' title='{$this->lang->more}' style='width: 16px; padding-left: 0px; border-radius: 4px;'></button>";
+        $menu .= "<ul class='dropdown-menu pull-right text-center' role='menu' style='position: unset; min-width: auto; padding: 5px 6px;'>";
+        $menu .= $this->buildMenu($moduleName, 'suspend', $params, $project, 'browse', 'pause', '', 'iframe btn-action', true);
+        if($project->status != 'doing')  $menu .= $this->buildMenu($moduleName, 'close',    $params, $project, 'browse', 'off',   '', 'iframe btn-action', true);
+        if($project->status != 'closed') $menu .= $this->buildMenu($moduleName, 'activate', $params, $project, 'browse', 'magic', '', 'iframe btn-action', true);
+        $menu .= "</ul>";
+        $menu .= "</div>";
+    }
+
+    $from     = $project->from == 'project' ? 'project' : 'pgmproject';
+    $iframe   = $this->app->tab == 'program' ? 'iframe' : '';
+    $onlyBody = $this->app->tab == 'program' ? true : '';
+    $dataApp  = "data-app=project";
+
+    $menu .= $this->buildMenu($moduleName, 'edit', $params, $project, 'browse', 'edit', '', $iframe, $onlyBody, $dataApp);
+
+    if($this->config->vision != 'lite')
+    {
+        $menu .= $this->buildMenu($moduleName, 'team', $params, $project, 'browse', 'group', '', '', '', $dataApp, $this->lang->execution->team);
+        $menu .= $this->buildMenu('project', 'group', "$params&programID={$project->programID}", $project, 'browse', 'lock', '', '', '', $dataApp);
+        $menu .= $this->buildMenu('project', 'collect', "$params", $project, 'browse', $project->collect ? 'star' :'star-empty', '', '', '', $dataApp);
+
+        if(common::hasPriv($moduleName, 'manageProducts') || common::hasPriv($moduleName, 'whitelist') || common::hasPriv($moduleName, 'delete'))
+        {
+            $menu .= "<div class='btn-group'>";
+            $menu .= "<button type='button' class='btn dropdown-toggle' data-toggle='context-dropdown' title='{$this->lang->more}'><i class='icon-ellipsis-v'></i></button>";
+            $menu .= "<ul class='dropdown-menu pull-right text-center' role='menu'>";
+            $menu .= $this->buildMenu($moduleName, 'manageProducts', $params . "&from={$this->app->tab}", $project, 'browse', 'link', '', 'btn-action', '', $project->hasProduct ? '' : "disabled='disabled'", $this->lang->project->manageProducts);
+            $menu .= $this->buildMenu('project', 'whitelist', "$params&module=project&from=$from", $project, 'browse', 'shield-check', '', 'btn-action', '', $dataApp);
+            $menu .= $this->buildMenu($moduleName, "delete", $params, $project, 'browse', 'trash', 'hiddenwin', 'btn-action');
+            $menu .= "</ul>";
+            $menu .= "</div>";
+        }
+    }
+    else
+    {
+        $menu .= $this->buildMenu($moduleName, 'team', $params, $project, 'browse', 'group', '', '', '', $dataApp, $this->lang->execution->team);
+        $menu .= $this->buildMenu('project', 'whitelist', "$params&module=project&from=$from", $project, 'browse', 'shield-check', '', 'btn-action', '', $dataApp);
+        $menu .= $this->buildMenu($moduleName, "delete", $params, $project, 'browse', 'trash', 'hiddenwin', 'btn-action');
+    }
+
+    return $menu;
+}
+
+
+/**
+ * Judge an action is clickable or not.
+ *
+ * @param  object    $project
+ * @param  string    $action
+ * @access public
+ * @return bool
+ */
+public static function isClickable($project, $action, $module = 'project')
+{
+    global $config;
+    $action = strtolower($action);
+
+    if(empty($project)) return true;
+    if(!isset($project->type)) return true;
+
+    if($action == 'start')    return $project->status == 'wait' or $project->status == 'suspended';
+    if($action == 'finish')   return $project->status == 'wait' or $project->status == 'doing';
+    if($action == 'close')    return $project->status != 'closed';
+    if($action == 'suspend')  return $project->status == 'wait' or $project->status == 'doing';
+    if($action == 'activate') return $project->status == 'done' or $project->status == 'closed';
+    if($action == 'edit' and $module == 'project') return !empty($config->CRProject) or $project->status != 'closed';
+    if($action == 'team' and $module == 'project') return !empty($config->CRProject) or $project->status != 'closed';
+    if($action == 'collect' and $module == 'project') return !empty($config->CRProject) or $project->status != 'closed';
+
+    if($action == 'whitelist') return $project->acl != 'open' and (!empty($config->CRProject) or $project->status != 'closed');
+    if($action == 'group') return $project->model != 'kanban' and (!empty($config->CRProject) or $project->status != 'closed');
+    if($action == 'manageproducts') return $project->model != 'kanban' and (!empty($config->CRProject) or $project->status != 'closed');
+
+    return true;
+}
