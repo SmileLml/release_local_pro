@@ -14,7 +14,7 @@ class mytesttask extends testtask
      * @access public
      * @return void
      */
-    public function browse($productID = 0, $branch = '', $type = 'local,totalStatus', $orderBy = 'id_desc', $recTotal = 0, $recPerPage = 20, $pageID = 1, $beginTime = 0, $endTime = 0)
+    public function browse($productID = 0, $branch = '', $type = 'local,totalStatus', $param = 0, $orderBy = 'id_desc', $recTotal = 0, $recPerPage = 20, $pageID = 1, $beginTime = 0, $endTime = 0)
     {
         /* Save session. */
         $uri = $this->app->getURI(true);
@@ -41,8 +41,15 @@ class mytesttask extends testtask
         /* Append id for secend sort. */
         $sort = $this->loadModel('common')->appendOrder($orderBy);
 
+        /* Set browse type. */
+        $browseType = strtolower($scopeAndStatus[1]);
+        if($browseType == 'bysearch') $this->session->set('testTaskVersionStatus', $browseType);
+        $queryID = ($browseType == 'bysearch') ? (int)$param : 0;
+        $actionURL = $this->createLink('testtask', 'browse', "&productID=$productID&branch=$branch&type=$scopeAndStatus[0],bySearch&queryID=myQueryID");
+        $this->testtask->buildSearchForm($productID, $this->products, $queryID, $actionURL, $branch);
+
         /* Get tasks. */
-        $tasks = $this->testtask->getProductTasks($productID, $branch, $sort, $pager, $scopeAndStatus, $beginTime, $endTime);
+        $tasks = $this->testtask->getProductTasks($productID, $branch, $sort, $pager, $scopeAndStatus, $queryID, $beginTime, $endTime);
 
         if(isset($this->config->CRProject) && empty($this->config->CRProject))
         {
@@ -57,16 +64,17 @@ class mytesttask extends testtask
             }
         }
 
-        $this->view->title      = $this->products[$productID] . $this->lang->colon . $this->lang->testtask->common;
-        $this->view->position[] = html::a($this->createLink('testtask', 'browse', "productID=$productID"), $this->products[$productID]);
-        $this->view->position[] = $this->lang->testtask->common;
-        $this->view->username = $this->app->user->account;
+        $this->view->title       = $this->products[$productID] . $this->lang->colon . $this->lang->testtask->common;
+        $this->view->position[]  = html::a($this->createLink('testtask', 'browse', "productID=$productID"), $this->products[$productID]);
+        $this->view->position[]  = $this->lang->testtask->common;
+        $this->view->username    = $this->app->user->account;
         $this->view->productID   = $productID;
         $this->view->productName = $this->products[$productID];
         $this->view->orderBy     = $orderBy;
         $this->view->tasks       = $tasks;
         $this->view->users       = $this->loadModel('user')->getPairs('noclosed|noletter');
         $this->view->pager       = $pager;
+        $this->view->param       = $param;
         $this->view->branch      = $branch;
         $this->view->beginTime   = $beginTime;
         $this->view->endTime     = $endTime;

@@ -427,3 +427,122 @@ public function copy($task, $copyNumber)
     }
     return $taskIDs;
 }
+
+/*
+    * Build search form.
+    *
+    * @param int     $queryID
+    * @param string  $actionURL
+    *
+    * @return 0
+    * */
+public function buildSearchForm($productID, $products, $queryID, $actionURL, $branch = 0)
+{
+    $projectID     = $this->lang->navGroup->bug == 'qa' ? 0 : $this->session->project;
+    $productParams = ($productID and isset($products[$productID])) ? array($productID => $products[$productID]) : $products;
+    $productParams = $productParams + array('all' => $this->lang->all);
+
+    $this->config->testtask->search['queryID']   = $queryID;
+    $this->config->testtask->search['actionURL'] = $actionURL;
+
+    $this->config->testtask->search['params']['build']['values']         = $this->loadModel('build')->getBuildPairs($productID, 'all', 'notrunk,withbranch,releasetag');
+    $this->config->testtask->search['params']['product']['values']       = $productParams;
+    $this->config->testtask->search['params']['execution']['values']     = $this->loadModel('product')->getExecutionPairsByProduct($productID, 0, 'id_desc', $projectID);
+
+    $this->loadModel('search')->setSearchParams($this->config->testtask->search);
+}
+
+/**
+ * Get test tasks of a product.
+ *
+ * @param  int         $productID
+ * @param  int|string  $branch
+ * @param  string      $orderBy
+ * @param  object      $pager
+ * @param  array       $scopeAndStatus
+ * @param  int         $beginTime
+ * @param  int         $endTime
+ * @access public
+ * @return array
+ */
+public function getProductTasks($productID, $branch = 'all', $orderBy = 'id_desc', $pager = null, $scopeAndStatus = array(), $queryID = 0, $beginTime = 0, $endTime = 0)
+{
+    $products = $scopeAndStatus[0] == 'all' ? $this->app->user->view->products : array();
+    $branch   = $scopeAndStatus[0] == 'all' ? 'all' : $branch;
+
+    if($queryID)
+    {
+        $query = $this->loadModel('search')->getQuery($queryID);
+        if($query)
+        {
+            $this->session->set('testtaskQuery', $query->sql);
+            $this->session->set('testtaskForm', $query->form);
+        }
+        else
+        {
+            $this->session->set('testtaskQuery', ' 1 = 1');
+        }
+    }
+    else
+    {
+        if(strtolower($scopeAndStatus[1]) == 'bysearch' and $this->session->testtaskQuery == false) $this->session->set('testtaskQuery', ' 1 = 1');
+    }
+
+    $query = str_replace('`name`','t1.name', $this->session->testtaskQuery);
+    $query = str_replace('`status`','t1.status', $query);
+    $query = str_replace('`product`','t1.product', $query);
+    $query = str_replace('`id`','t1.id', $query);
+
+    $tasks = $this->dao->select("t1.*, t5.multiple, IF(t2.shadow = 1, t5.name, t2.name) AS productName, t3.name as executionName, t4.name AS buildName, t4.branch AS branch, t5.name AS projectName")
+        ->from(TABLE_TESTTASK)->alias('t1')
+        ->leftJoin(TABLE_PRODUCT)->alias('t2')->on('t1.product = t2.id')
+        ->leftJoin(TABLE_EXECUTION)->alias('t3')->on('t1.execution = t3.id')
+        ->leftJoin(TABLE_BUILD)->alias('t4')->on('t1.build = t4.id')
+        ->leftJoin(TABLE_PROJECT)->alias('t5')->on('t3.project = t5.id')
+        ->where('t1.deleted')->eq(0)
+        ->andWhere('t1.auto')->ne('unit')
+        ->beginIF(!$this->app->user->admin)->andWhere('t1.execution')->in("0,{$this->app->user->view->sprints}")->fi()
+        ->beginIF($scopeAndStatus[0] == 'local')->andWhere('t1.product')->eq((int)$productID)->fi()
+        ->beginIF($scopeAndStatus[0] == 'all')->andWhere('t1.product')->in($products)->fi()
+        ->beginIF(strtolower($scopeAndStatus[1]) == 'myinvolved')
+        ->andWhere('(t1.owner')->eq($this->app->user->account)
+        ->orWhere("FIND_IN_SET('{$this->app->user->account}', t1.members)")
+        ->markRight(1)
+        ->fi()
+        ->beginIF(strtolower($scopeAndStatus[1]) == 'totalstatus')->andWhere('t1.status')->in('blocked,doing,wait,done')->fi()
+        ->beginIF(!in_array(strtolower($scopeAndStatus[1]), array('totalstatus', 'review', 'myinvolved', 'bysearch'), true))->andWhere('t1.status')->eq($scopeAndStatus[1])->fi()
+        ->beginIF($branch !== 'all' and strtolower($scopeAndStatus[1]) != 'bysearch')->andWhere("CONCAT(',', t4.branch, ',')")->like("%,$branch,%")->fi()
+        ->beginIF($beginTime)->andWhere('t1.begin')->ge($beginTime)->fi()
+        ->beginIF($endTime)->andWhere('t1.end')->le($endTime)->fi()
+        ->beginIF($branch == BRANCH_MAIN and strtolower($scopeAndStatus[1]) != 'bysearch')
+        ->orWhere('(t1.build')->eq('trunk')
+        ->andWhere('t1.deleted')->eq(0)
+        ->andWhere('t1.product')->eq((int)$productID)
+        ->markRight(1)
+        ->fi()
+        ->beginIF($scopeAndStatus[1] == 'review')
+        ->andWhere("FIND_IN_SET('{$this->app->user->account}', t1.reviewers)")
+        ->andWhere('t1.reviewStatus')->eq('doing')
+        ->fi()
+        ->beginIF(strtolower($scopeAndStatus[1]) == 'bysearch' and $query)->andWhere($query)->fi()
+        ->orderBy($orderBy)
+        ->page($pager)
+        ->fetchAll('id');
+
+    foreach($tasks as $taskID => $task)
+    {
+        if($task->multiple)
+        {
+            if($task->projectName and $task->executionName)
+            {
+                $tasks[$taskID]->executionName = $task->projectName . '/' . $task->executionName;
+            }
+            elseif(!$task->executionName)
+            {
+                $tasks[$taskID]->executionName = $task->projectName;
+            }
+        }
+    }
+
+    return $tasks;
+}

@@ -49,8 +49,8 @@ class mytesttask extends testtask
 
         /* Create testtask from testtask of test.*/
         $productID  = $productID ? $productID : key($this->products);
-        $executions = empty($productID) ? array() : $this->loadModel('product')->getExecutionPairsByProduct($productID, '', 'id_desc', $projectID, 'stagefilter' . isset($this->config->CRPorject) && empty($this->config->CRPorject) ? ',projectclosefilter' : '');
-        $builds     = empty($productID) ? array() : $this->loadModel('build')->getBuildPairs($productID, 'all', 'notrunk,withexecution'  . isset($this->config->CRPorject) && empty($this->config->CRPorject) ? ',projectclosefilter' : '', $projectID, 'project', '', false);
+        $executions = empty($productID) ? array() : $this->loadModel('product')->getExecutionPairsByProduct($productID, '', 'id_desc', $projectID, 'stagefilter' . (isset($this->config->CRProject) && empty($this->config->CRProject) ? ',projectclosefilter' : ''));
+        $builds     = empty($productID) ? array() : $this->loadModel('build')->getBuildPairs($productID, 'all', 'notrunk,withexecution' . (isset($this->config->CRProject) && empty($this->config->CRProject) ? ',projectclosefilter' : ''), $projectID, 'project', '', false);
 
         $execution = $this->loadModel('execution')->getByID($executionID);
         if(!empty($execution) and $execution->type == 'kanban') $this->lang->testtask->execution = str_replace($this->lang->execution->common, $this->lang->kanban->common, $this->lang->testtask->execution);
