@@ -353,7 +353,7 @@ public function buildOperateBrowseMenu($project)
     {
         $menu .= $this->buildMenu($moduleName, 'team', $params, $project, 'browse', 'group', '', '', '', $dataApp, $this->lang->execution->team);
         $menu .= $this->buildMenu('project', 'group', "$params&programID={$project->programID}", $project, 'browse', 'lock', '', '', '', $dataApp);
-        $menu .= $this->buildMenu('project', 'collect', "$params", $project, 'browse', $project->collect ? 'star' :'star-empty', '', '', '', $dataApp);
+        $menu .= $this->buildMenu('project', 'collect', "$params", $project, 'browse', $project->collect ? 'star' : 'star-empty', '', '', '', $dataApp);
 
         if(common::hasPriv($moduleName, 'manageProducts') || common::hasPriv($moduleName, 'whitelist') || common::hasPriv($moduleName, 'delete'))
         {
