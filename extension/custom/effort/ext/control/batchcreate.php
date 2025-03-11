@@ -53,9 +53,13 @@ class myeffort extends effort
         unset($actions['executionBug']);
         unset($actions['executions']);
         $taskIDs = array();
-        foreach($executionTask as $key => $value)
+        foreach($executionTask as $taskID => $execution)
         {
-            $taskIDs[] = explode('_', $key)[1];
+            $taskIDs[] = explode('_', $taskID)[1];
+        }
+        foreach($actions as $actionID => $action)
+        {
+            if($action->objectType == 'task') $taskIDs[] = $action->objectID;
         }
         $tasks = $this->loadModel('task')->getByList($taskIDs);
         foreach($tasks as $task)

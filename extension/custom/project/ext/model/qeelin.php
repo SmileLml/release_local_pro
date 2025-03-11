@@ -409,3 +409,28 @@ public static function isClickable($project, $action, $module = 'project')
 
     return true;
 }
+
+public function buildTesttaskSearchForm($products, $queryID, $actionURL)
+{
+    $productPairs = array('' => '');
+    $builds  = array('' => '', 'trunk' => $this->lang->trunk);
+
+    foreach($products as $product)
+    {
+        $productPairs[$product->id] = $product->name;
+        $productBuilds  = $this->loadModel('build')->getBuildPairs($product->id, 'all', $params = 'noempty|notrunk|withbranch');
+        foreach($productBuilds as $buildID => $buildName)
+        {
+            $builds[$buildID] = ((count($products) >= 2 and $buildID) ? $product->name . '/' : '') . $buildName;
+        }
+    }
+
+    $this->config->testtask->search['queryID']   = $queryID;
+    $this->config->testtask->search['actionURL'] = $actionURL;
+    unset($this->config->testtask->search['fields']['execution']);
+
+    $this->config->testtask->search['params']['build']['values']   = $builds;
+    $this->config->testtask->search['params']['product']['values'] = $productPairs + array('all' => $this->lang->product->allProductsOfProject);
+
+    $this->loadModel('search')->setSearchParams($this->config->testtask->search);
+}

@@ -71,6 +71,7 @@ $(function()
 
         var $consumedInput = $(this).closest('td').next().next().find('input');
         var $leftInput     = $(this).closest('td').next().next().next().find('input');
+        var $testInput     = $(this).closest('td').next().next().next().next().find('input');
         var taskID = $(this).closest('td').attr('data-shadowtask');
         var bugID  = $(this).closest('td').attr('data-shadowbug');
         var newTaskID = value.slice(5);
@@ -129,6 +130,7 @@ $(function()
                         if(tasks[newTaskID].estimate == 0 || tasks[newTaskID].estimate <= tasks[newTaskID].consumed)
                         {
                             $leftInput.val(0);
+                            $testInput.removeAttr('disabled').removeAttr('title').val(tasks[newTaskID].testPackageVersion);
                         }
                         else
                         {
@@ -143,7 +145,7 @@ $(function()
                     {
                         tasks[taskID].consumed = Math.round((parseFloat(tasks[taskID].consumed) - parseFloat($consumedInput.val())) * 1000) / 1000;
                     }
-                    $(this).closest('td').removeAttr('data-shadowtask')
+                    $(this).closest('td').removeAttr('data-shadowtask');
                     $(this).closest('td').attr('data-shadowbug', newBugID);
                 }
             }
@@ -157,6 +159,7 @@ $(function()
                         if(tasks[newTaskID].estimate == 0 || tasks[newTaskID].estimate <= tasks[newTaskID].consumed)
                         {
                             $leftInput.val(0);
+                            $testInput.removeAttr('disabled').removeAttr('title').val(tasks[newTaskID].testPackageVersion);
                         }
                         else
                         {
@@ -193,7 +196,7 @@ $(function()
         $execution.val(executionID);
         $execution.trigger("chosen:updated");
 
-        var $leftInput = $(this).closest('td').next().next().next().find('input');
+
         if(value.indexOf('task_') >= 0)
         {
             $leftInput.removeAttr('disabled').removeAttr('title');
@@ -201,6 +204,7 @@ $(function()
         else
         {
             $leftInput.attr('disabled', true).attr('title', leftTip).val('');
+            $testInput.attr('disabled', true).attr('title', testTip).val('');
         }
     });
 });

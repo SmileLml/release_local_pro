@@ -65,76 +65,6 @@ $(function(){
             }
         }, 'json');
     });
-
-    // var $prev = 0;
-    // $("input[name^=consumed]").keyup(function(){
-    //     $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
-    //     console.log($(this));
-    //     if(!$objectType)
-    //     {
-    //         alert(hoursConsumedNoObjectType);
-    //         $(this).val('');
-    //         return;
-    //     }
-    //     $current = $(this).val();
-    //     $current = parseFloat(typeof($current) == 'undefined' ? 0 : $current);
-    //     $current = isNaN($current) ? 0 : $current;
-    //     $objectType = $(this).closest('td').prev().prev().find('select#objectType').val();
-    //     if($objectType.indexOf('task_') >= 0 || $objectType.indexOf('bug_') >= 0)
-    //     {
-    //         if(limitWorkHour - (hoursConsumedToday + $current - $prev) < 0)
-    //         {
-    //             $(this).closest('td').next().find('input').val('');
-    //             if($('input[name=date]').val() == currentDate)
-    //             {
-    //                 alert(hoursConsumedTodayOverflow);
-    //             }
-    //             else
-    //             {
-    //                 alert(inputDate + hoursConsumedTodayOverflowOther);
-    //             }
-    //             $(this).val($prev ? $prev : '');
-    //             return;
-    //         }
-
-    //         hoursConsumedToday = hoursConsumedToday + $current - $prev;
-    //         hoursConsumedToday = Math.round(hoursConsumedToday * 1000) / 1000;
-    //         hoursSurplusToday  = hoursSurplusToday  - $current + $prev;
-    //         hoursSurplusToday  = Math.round(hoursSurplusToday * 1000) / 1000;
-    //         $('.hoursConsumedToday').html(hoursConsumedToday + 'h');
-    //         $('.hoursSurplusToday').html(hoursSurplusToday + 'h');
-
-    //         if($objectType.indexOf('task_') >= 0)
-    //         {
-    //             var taskID = $objectType.slice(5);
-    //             tasks[taskID].consumed = Math.round((tasks[taskID].consumed + $current - $prev) * 1000) / 1000;
-    //             var task = tasks[taskID];
-    //             var estimate = task.estimate;
-    //             var consumed = task.consumed;
-    //             if(estimate == 0 || estimate <= consumed)
-    //             {
-    //                 $(this).closest('td').next().find('input').val(0);
-    //             }
-    //             else
-    //             {
-    //                 $(this).closest('td').next().find('input').val(Math.round((estimate - consumed) * 1000) / 1000);
-    //             }
-    //         }
-    //         $prev = $(this).val();
-    //         $prev = parseFloat(typeof($prev) == 'undefined' ? 0 : $prev);
-    //         $prev = isNaN($prev) ? 0 : $prev;
-    //     }
-    // });
-
-    // $("input[name^=consumed]").focus(function(){
-    //     $prev = parseFloat(typeof($(this).val()) == 'undefined' ? 0 : $(this).val());
-    //     $prev = isNaN($prev) ? 0 : $prev;
-    // });
-
-    // $(document).on('change', 'select#objectType', function()
-    // {
-    //     var $consumedInput = $(this).closest('td').next().next().find('input');
-    // });
 });
 
 function cleanEffort()
@@ -261,9 +191,11 @@ function consumedKeyup(e)
             if(estimate == 0 || estimate <= consumed)
             {
                 $(e).closest('td').next().find('input').val(0);
+                $(e).closest('td').next().next().find('input').removeAttr('disabled').removeAttr('title').val(tasks[taskID].testPackageVersion);
             }
             else
             {
+                $(e).closest('td').next().next().find('input').attr('disabled', true).attr('title', testTip).val('');
                 $(e).closest('td').next().find('input').val(Math.round((estimate - consumed) * 1000) / 1000);
             }
         }
@@ -277,4 +209,16 @@ function consumedFocus(e)
 {
     $prev = parseFloat(typeof($(e).val()) == 'undefined' ? 0 : $(e).val());
     $prev = isNaN($prev) ? 0 : $prev;
+}
+
+function testKeyup(e)
+{
+    var taskID = $(e).closest('td').prev().prev().prev().prev().attr('data-shadowtask');
+    tasks[taskID].testPackageVersion = $(e).val();
+    $('select#objectType').each(function()
+    {
+        if($(this).closest('td').attr('data-shadowtask') == taskID);
+        var testInput = $(this).closest('td').next().next().next().next().find('input');
+        if(testInput.attr('disabled') != 'disabled') testInput.val($(e).val());
+    });
 }

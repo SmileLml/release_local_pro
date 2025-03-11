@@ -13,6 +13,7 @@
 <?php include $app->getModuleRoot() . 'common/view/header.html.php';?>
 <?php include $app->getModuleRoot() . 'common/view/datepicker.html.php';?>
 <?php js::set('leftTip',    $lang->effort->leftTip);?>
+<?php js::set('testTip',    $lang->task->testPackageVersion);?>
 <?php js::set('executions', $executions);?>
 <?php js::set('hoursConsumedTodayOverflow', $lang->effort->hoursConsumedTodayOverflow);?>
 <?php js::set('hoursConsumedTodayOverflowOther', $lang->effort->hoursConsumedTodayOverflowOther);?>
@@ -70,6 +71,7 @@
             <th class='col-execution required'><?php echo $lang->effort->execution;?></th>
             <th class='w-110px required'><?php echo $lang->effort->consumed . '(' . $lang->effort->hour . ')';?></th>
             <th class='col-left required'><?php echo $lang->effort->left . '(' . $lang->effort->hour . ')';?></th>
+            <th class='w-110px required'><?php echo $lang->task->testPackageVersion;?></th>
             <th class='col-actions'></th>
           </tr>
         </thead>
@@ -104,6 +106,7 @@
             </td>
             <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control" onkeyup="consumedKeyup(this)" onfocus="consumedFocus(this)"');?></td>
             <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
+            <td><?php echo html::input("testPackageVersion[$i]", ($action->objectType == 'task' ? $tasks[$action->objectID]->testPackageVersion : ''), "autocomplete='off' class='form-control' disabled onkeyup='testKeyup(this)' ");?></td>
             <td align='center'>
               <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
               <a href='javascript:;' onclick='deleteEffort(this)' tabindex="9999" class='btn btn-link btn-delete'><i class="icon icon-close"></i></a>
@@ -119,6 +122,7 @@
             <td style='overflow:visible'><?php echo html::select("execution[$i]", $executions, 0, "tabindex='9999' class='form-control chosen'");?></td>
             <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control" onkeyup="consumedKeyup(this)" onfocus="consumedFocus(this)"');?></td>
             <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
+            <td><?php echo html::input("testPackageVersion[$i]", '', "autocomplete='off' class='form-control' disabled onkeyup='testKeyup(this)' ");?></td>
             <td align='center'>
               <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
               <a href='javascript:;' onclick='deleteEffort(this)' tabindex="9999" class='btn btn-link btn-delete'><i class="icon icon-close"></i></a>

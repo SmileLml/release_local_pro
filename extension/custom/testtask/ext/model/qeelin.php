@@ -440,10 +440,12 @@ public function buildSearchForm($productID, $products, $queryID, $actionURL, $br
 {
     $projectID     = $this->lang->navGroup->bug == 'qa' ? 0 : $this->session->project;
     $productParams = ($productID and isset($products[$productID])) ? array($productID => $products[$productID]) : $products;
-    $productParams = $productParams + array('all' => $this->lang->all);
 
     $this->config->testtask->search['queryID']   = $queryID;
     $this->config->testtask->search['actionURL'] = $actionURL;
+
+    unset($this->config->testtask->search['fields']['begin']);
+    unset($this->config->testtask->search['fields']['end']);
 
     $this->config->testtask->search['params']['build']['values']         = $this->loadModel('build')->getBuildPairs($productID, 'all', 'notrunk,withbranch,releasetag');
     $this->config->testtask->search['params']['product']['values']       = $productParams;
@@ -545,4 +547,100 @@ public function getProductTasks($productID, $branch = 'all', $orderBy = 'id_desc
     }
 
     return $tasks;
+}
+
+/**
+ * Get test tasks of a execution.
+ *
+ * @param  int    $executionID
+ * @param  string $orderBy
+ * @param  object $pager
+ * @access public
+ * @return array
+ */
+public function getExecutionTasks($executionID, $objectType = 'execution', $browseType = 'all', $queryID = 0, $orderBy = 'id_desc', $pager = null)
+{
+    if($queryID)
+    {
+        $query = $this->loadModel('search')->getQuery($queryID);
+        if($query)
+        {
+            $this->session->set('testtaskQuery', $query->sql);
+            $this->session->set('testtaskForm', $query->form);
+        }
+        else
+        {
+            $this->session->set('testtaskQuery', ' 1 = 1');
+        }
+    }
+    else
+    {
+        if(strtolower($browseType) == 'bysearch' and $this->session->testtaskQuery == false) $this->session->set('testtaskQuery', ' 1 = 1');
+    }
+
+    $query = str_replace('`id`','t1.`id`', $this->session->testtaskQuery);
+    $query = str_replace('`product`','t1.`product`', $query);
+
+    $allProduct = "t1.`product` = 'all'";
+    if(strpos($query, $allProduct) !== false)
+    {
+        $products = $this->app->user->view->products;
+        $query = str_replace($allProduct, '1', $query);
+        $query = $query . ' AND t1.`product` ' . helper::dbIN($products);
+    }
+
+    return $this->dao->select('t1.*, t2.name AS buildName')
+        ->from(TABLE_TESTTASK)->alias('t1')
+        ->leftJoin(TABLE_BUILD)->alias('t2')->on('t1.build = t2.id')
+        ->where('t1.deleted')->eq(0)
+        ->beginIF($objectType == 'execution')->andWhere('t1.execution')->eq((int)$executionID)->fi()
+        ->beginIF($objectType == 'project')->andWhere('t1.project')->eq((int)$executionID)->fi()
+        ->andWhere('t1.auto')->ne('unit')
+        ->beginIF(strtolower($browseType) == 'bysearch' and $query)->andWhere($query)->fi()
+        ->orderBy($orderBy)
+        ->page($pager)
+        ->fetchAll('id');
+}
+
+public function getProjectTasks($projectID, $browseType = 'all', $queryID = 0, $orderBy = 'id_desc', $pager = null)
+{
+    if($queryID)
+    {
+        $query = $this->loadModel('search')->getQuery($queryID);
+        if($query)
+        {
+            $this->session->set('testtaskQuery', $query->sql);
+            $this->session->set('testtaskForm', $query->form);
+        }
+        else
+        {
+            $this->session->set('testtaskQuery', ' 1 = 1');
+        }
+    }
+    else
+    {
+        if(strtolower($browseType) == 'bysearch' and $this->session->testtaskQuery == false) $this->session->set('testtaskQuery', ' 1 = 1');
+    }
+
+    $query = str_replace('`id`','t1.`id`', $this->session->testtaskQuery);
+    $query = str_replace('`product`','t1.`product`', $query);
+
+    $allProduct = "t1.`product` = 'all'";
+    if(strpos($query, $allProduct) !== false)
+    {
+        $products = $this->app->user->view->products;
+        $query = str_replace($allProduct, '1', $query);
+        $query = $query . ' AND t1.`product` ' . helper::dbIN($products);
+    }
+
+    return $this->dao->select('t1.*, t2.name AS buildName')
+        ->from(TABLE_TESTTASK)->alias('t1')
+        ->leftJoin(TABLE_BUILD)->alias('t2')->on('t1.build = t2.id')
+        ->where('t1.project')->eq((int)$projectID)
+        ->andWhere('t1.auto')->ne('unit')
+        ->andWhere('t1.deleted')->eq(0)
+        ->beginIF(strtolower($browseType) == 'bysearch' and $query)->andWhere($query)->fi()
+        ->orderBy($orderBy)
+        ->page($pager)
+        ->fetchAll('id');
 }

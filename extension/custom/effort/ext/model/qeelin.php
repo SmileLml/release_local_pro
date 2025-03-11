@@ -21,12 +21,22 @@ public function batchCreateForMyWork()
     $nonRDUser  = (!empty($_SESSION['user']->feedback) or !empty($_COOKIE['feedbackView'])) ? true : false;
     $consumedAll = $this->getAccountStatistics('', $efforts->date);
 
+    $taskTestPackageVersion = array();
+
+    foreach($efforts->id as $id => $num)
+    {
+        $pos    = strpos($efforts->objectType[$id], '_');
+        $taskID = (substr($efforts->objectType[$id], $pos + 1));
+        if(substr($efforts->objectType[$id], 0, $pos) == 'task')
+        {
+            if(isset($efforts->testPackageVersion[$num]) && !empty($efforts->testPackageVersion[$num])) $taskTestPackageVersion[$taskID] = $efforts->testPackageVersion[$num];
+        }
+    }
+
     foreach($efforts->id as $id => $num)
     {
         $isBug = strpos($efforts->objectType[$id], 'bug') !== false;
         if(empty($efforts->work[$id]) && empty($efforts->objectType[$id]) && (!$isBug && empty($efforts->execution[$num])) && empty($efforts->consumed[$id]) && empty($efforts->left[$num])) continue;
-
-        if($efforts->objectType[$id] == 'task' and (empty($efforts->date) or helper::isZeroDate($efforts->date))) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->error->dateEmpty));
 
         $efforts->work[$id] = trim($efforts->work[$id]);
 
@@ -41,6 +51,8 @@ public function batchCreateForMyWork()
         $efforts->objectType[$id] = substr($efforts->objectType[$id], 0, $pos);
         $efforts->execution[$num] = !empty($efforts->execution[$num]) ? trim($efforts->execution[$num]) : 0;
 
+        if($efforts->objectType[$id] == 'task' and (empty($efforts->date) or helper::isZeroDate($efforts->date))) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->error->dateEmpty));
+
         if($efforts->objectType[$id] == 'bug')
         {
             $effortBug = $this->loadModel('bug')->getByID($efforts->objectID[$id]);
@@ -53,6 +65,7 @@ public function batchCreateForMyWork()
         if(!empty($left) and !is_numeric($left)) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->isNumber));
         if(!empty($left) and $left < 0)          die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->notNegative));
         if($efforts->objectType[$id] == 'task' and !$nonRDUser and empty($left) and !is_numeric($left))  die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->notEmpty));
+        if($efforts->objectType[$id] == 'task' and $left == 0 and !isset($taskTestPackageVersion[$efforts->objectID[$id]])) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->testPackageVersion . $this->lang->effort->notEmpty));
 
         if($efforts->objectType[$id] == 'bug')
         {
@@ -190,6 +203,12 @@ public function batchCreateForMyWork()
             $newTask->consumed      += $effort->consumed;
             $newTask->lastEditedBy   = $this->app->user->account;
             $newTask->lastEditedDate = $now;
+            if(isset($taskTestPackageVersion[$newTask->id]))
+            {
+                $newTask->testPackageVersion = $taskTestPackageVersion[$newTask->id];
+                unset($taskTestPackageVersion[$newTask->id]);
+            }
+
             if(helper::isZeroDate($task->realStarted)) $newTask->realStarted = $now;
 
             if(empty($lastDatePairs[$taskID]) or $lastDatePairs[$taskID] <= $effort->date)
@@ -1184,6 +1203,15 @@ public function printCellExt($col, $effort, $mode = 'datatable', $executions = a
             $title = " title='{$effort->projectName}'";
         }
 
+        if($id == 'projectStatus')
+        {
+            static $projects;
+            if(empty($projects)) $projects = $this->loadModel('project')->getPairsByProgram();
+            $this->loadModel('project');
+            $effort->projectStatus = !empty($effort->project) && isset($projects[$effort->project]) ? zget($this->lang->project->statusList, $effort->projectStatus, '') : '';
+            $title = " title='{$effort->projectStatus}'";
+        }
+
         if($id == 'dept')
         {
             static $depts;
@@ -1238,6 +1266,9 @@ public function printCellExt($col, $effort, $mode = 'datatable', $executions = a
             break;
         case 'execution':
             echo $effort->executionName;
+            break;
+        case 'projectStatus':
+            echo $effort->projectStatus;
             break;
         case 'project':
             echo $effort->projectName;

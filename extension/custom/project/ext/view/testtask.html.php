@@ -30,6 +30,7 @@
       <span class='text'><?php echo $lang->testtask->browse;?></span>
       <span class="label label-light label-badge"><?php echo $total;?></span>
     </a>
+    <a class="btn btn-link querybox-toggle" id='bysearchTab'><i class="icon icon-search muted"></i> <?php echo isset($lang->search->common) ? $lang->search->common : '搜索';?></a>
   </div>
   <div class="btn-toolbar pull-right">
     <?php if(common::canModify('project', $project)):?>
@@ -43,7 +44,8 @@ $testingCount = 0;
 $blockedCount = 0;
 $doneCount    = 0;
 ?>
-<div id="mainContent">
+<div id="mainContent" class='main-row split-row fade'>
+  <div class="cell<?php if($browseType == 'bysearch') echo ' show';?>" id="queryBox" data-module='testtask'></div>
   <?php if(empty($tasks)):?>
     <div class="table-empty-tip">
       <p>
@@ -57,7 +59,7 @@ $doneCount    = 0;
     <form class="main-table table-testtask" data-group="true" method="post" target='hiddenwin' id='testtaskForm'>
       <table class="table table-grouped has-sort-head" id='taskList'>
         <thead>
-        <?php $vars = "projectID=$projectID&orderBy=%s&recTotal={$pager->recTotal}&recPerPage={$pager->recPerPage}&pageID={$pager->pageID}";?>
+        <?php $vars = "projectID=$projectID&browseType=$browseType&param=$param&orderBy=%s&recTotal={$pager->recTotal}&recPerPage={$pager->recPerPage}&pageID={$pager->pageID}";?>
         <?php $canTestReport = ($canBeChanged and common::hasPriv('testreport', 'browse'));?>
         <tr class='<?php if($total and $project->hasProduct) echo 'divider'; ?>'>
           <th class='c-side text-center <?php if(!$project->hasProduct) echo 'hide';?>'><?php common::printOrderLink('product', $orderBy, $vars, $lang->testtask->product);?></th>
