@@ -1,10 +1,10 @@
 <?php
 global $lang;
 $config->testtask->search['module']              = 'testtask';
-$config->testtask->search['fields']['id']        = $lang->testtask->id;
-$config->testtask->search['fields']['name']      = $lang->testtask->name;
-$config->testtask->search['fields']['status']    = $lang->testtask->status;
-$config->testtask->search['fields']['build']     = $lang->testtask->build;
+$config->testtask->search['fields']['id']        = 'ID';
+$config->testtask->search['fields']['name']      = $lang->testtask->common . $lang->testtask->name;
+$config->testtask->search['fields']['status']    = $lang->statusAB;
+$config->testtask->search['fields']['build']     = $lang->testtask->buildAB;
 $config->testtask->search['fields']['owner']     = $lang->testtask->owner;
 $config->testtask->search['fields']['product']   = $lang->testtask->product;
 $config->testtask->search['fields']['execution'] = $lang->testtask->execution;

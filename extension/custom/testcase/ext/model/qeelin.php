@@ -653,3 +653,13 @@ function update($caseID, $testtasks = array())
         return common::createChanges($oldCase, $case);
     }
 }
+
+public function getByList($caseIDList = 0, $query = '', $deleted = false)
+{
+    return $this->dao->select('*')->from(TABLE_CASE)
+        ->beginIF(!$deleted)->where('deleted')->eq(0)->fi()
+        ->beginIF($deleted)->where('1=1')->fi()
+        ->beginIF($caseIDList)->andWhere('id')->in($caseIDList)->fi()
+        ->beginIF($query)->andWhere($query)->fi()
+        ->fetchAll('id');
+}

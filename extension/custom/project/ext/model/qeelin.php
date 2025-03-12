@@ -128,10 +128,10 @@ public function printCell($col, $project, $users, $programID = 0)
                 echo $project->realBegan;
                 break;
             case 'realEnd':
-                echo $project->realEnd;
+                echo $project->status == 'closed' ? $project->realEnd : '';
                 break;
             case 'closedDate':
-                echo $project->closedDate;
+                echo $project->status == 'closed' ? $project->closedDate : '';
                 break;
             case 'status':
                 echo "<span class='status-task text-center  status-{$project->status}'> " . zget($this->lang->project->statusList, $project->status) . "</span>";

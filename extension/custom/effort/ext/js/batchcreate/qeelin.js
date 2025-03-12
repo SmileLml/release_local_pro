@@ -222,3 +222,15 @@ function testKeyup(e)
         if(testInput.attr('disabled') != 'disabled') testInput.val($(e).val());
     });
 }
+
+function leftKeyup(e)
+{
+    if($(e).val() == 0)
+    {
+        $(e).closest('td').next().find('input').removeAttr('disabled').removeAttr('title').val(tasks[taskID].testPackageVersion);
+    }
+    else
+    {
+        $(e).closest('td').next().find('input').attr('disabled', true).attr('title', testTip).val('');
+    }
+}

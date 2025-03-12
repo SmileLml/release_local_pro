@@ -265,3 +265,32 @@ public function batchSetDeadline()
         return helper::end(js::error($this->lang->bug->batchSetdeadlineError) . js::locate($this->session->bugList));
     }
 }
+
+public function assign($bugID)
+{
+    $now = helper::now();
+    $oldBug = $this->getById($bugID);
+    if($oldBug->status == 'closed') return array();
+
+    $bug = fixer::input('post')
+        ->add('id', $bugID)
+        ->setDefault('lastEditedBy', $this->app->user->account)
+        ->setDefault('lastEditedDate', $now)
+        ->setDefault('assignedDate', $now)
+        ->setDefault('mailto', '')
+        ->stripTags($this->config->bug->editor->assignto['id'], $this->config->allowedTags)
+        ->remove('comment,showModule,adjustProduct,adjustBranch,adjustProject,adjustExecution,adjustBuild,deadline,batchCommentVal')
+        ->join('mailto', ',')
+        ->get();
+
+    if($this->app->rawMethod == 'batchassignto') unset($bug->mailto);
+
+    $bug = $this->loadModel('file')->processImgURL($bug, $this->config->bug->editor->assignto['id'], $this->post->uid);
+    $this->dao->update(TABLE_BUG)
+        ->data($bug)
+        ->autoCheck()
+        ->checkFlow()
+        ->where('id')->eq($bugID)->exec();
+
+    if(!dao::isError()) return common::createChanges($oldBug, $bug);
+}

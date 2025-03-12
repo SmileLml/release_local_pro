@@ -448,7 +448,7 @@ public function buildSearchForm($productID, $products, $queryID, $actionURL, $br
     unset($this->config->testtask->search['fields']['end']);
 
     $this->config->testtask->search['params']['build']['values']         = $this->loadModel('build')->getBuildPairs($productID, 'all', 'notrunk,withbranch,releasetag');
-    $this->config->testtask->search['params']['product']['values']       = $productParams;
+    $this->config->testtask->search['params']['product']['values']       = array('' => '') + $productParams;
     $this->config->testtask->search['params']['execution']['values']     = $this->loadModel('product')->getExecutionPairsByProduct($productID, 0, 'id_desc', $projectID);
 
     $this->loadModel('search')->setSearchParams($this->config->testtask->search);

@@ -48,7 +48,7 @@ class mytestcase extends testcase
                     $libCaseIDList = array_unique($libCaseIDList);
                     if(!empty($libCaseIDList))
                     {
-                        $libCaseList = $this->testcase->getByList($libCaseIDList);
+                        $libCaseList = $this->testcase->getByList($libCaseIDList, '', true);
                         $this->testcase->batchConfirmCaseUpdate($caseListFilter, $libCaseList);
                     }
                 }

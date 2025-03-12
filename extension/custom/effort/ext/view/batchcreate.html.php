@@ -105,7 +105,7 @@
               ?>
             </td>
             <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control" onkeyup="consumedKeyup(this)" onfocus="consumedFocus(this)"');?></td>
-            <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
+            <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled onkeyup='leftKeyup(this)' title='{$lang->effort->leftTip}'");?></td>
             <td><?php echo html::input("testPackageVersion[$i]", ($action->objectType == 'task' ? $tasks[$action->objectID]->testPackageVersion : ''), "autocomplete='off' class='form-control' disabled onkeyup='testKeyup(this)' ");?></td>
             <td align='center'>
               <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
@@ -121,7 +121,7 @@
             <td style='overflow:visible'><?php echo html::select("objectType[]", $typeList, 'custom', "tabindex='9999' class='form-control chosen'");?></td>
             <td style='overflow:visible'><?php echo html::select("execution[$i]", $executions, 0, "tabindex='9999' class='form-control chosen'");?></td>
             <td><?php echo html::input("consumed[]", '', 'autocomplete="off" class="form-control" onkeyup="consumedKeyup(this)" onfocus="consumedFocus(this)"');?></td>
-            <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled title='{$lang->effort->leftTip}'");?></td>
+            <td><?php echo html::input("left[$i]", '', "autocomplete='off' class='form-control' disabled onkeyup='leftKeyup(this)' title='{$lang->effort->leftTip}'");?></td>
             <td><?php echo html::input("testPackageVersion[$i]", '', "autocomplete='off' class='form-control' disabled onkeyup='testKeyup(this)' ");?></td>
             <td align='center'>
               <a href='javascript:;' onclick='addEffort(this)' tabindex="9999" class='btn btn-link btn-add'><i class="icon icon-plus"></i></a>
