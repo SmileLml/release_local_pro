@@ -217,9 +217,11 @@ function testKeyup(e)
     tasks[taskID].testPackageVersion = $(e).val();
     $('select#objectType').each(function()
     {
-        if($(this).closest('td').attr('data-shadowtask') == taskID);
-        var testInput = $(this).closest('td').next().next().next().next().find('input');
-        if(testInput.attr('disabled') != 'disabled') testInput.val($(e).val());
+        if($(this).closest('td').attr('data-shadowtask') == taskID)
+        {
+            var testInput = $(this).closest('td').next().next().next().next().find('input');
+            if(testInput.attr('disabled') != 'disabled') testInput.val($(e).val());
+        }
     });
 }
 

@@ -341,22 +341,33 @@ function buildOperateBrowseMenuExt($task)
 
 public function copy($task, $copyNumber)
 {
-    $now   = helper::now();
-    $tasks = fixer::input('post')->get();
+    $now    = helper::now();
+    $tasks  = fixer::input('post')->get();
+    $builds = array();
+    for($i = 1; $i <= $copyNumber; $i++)
+    {
+        if(empty($tasks->build[$i]))
+        {
+            dao::$errors['message'][] = sprintf($this->lang->testtask->buildNotEmpty, $i);
+            return false;
+        }
+        $builds[] = $tasks->build[$i];
+    }
 
+    $builds   = $this->loadModel('build')->getByList(array_unique($builds));
     $newTasks = array();
     for($i = 1; $i <= $copyNumber; $i++)
     {
         $newTask              = new stdClass();
         $newTask->name        = $tasks->name[$i];
-        $newTask->project     = $task->project;
-        $newTask->execution   = $task->execution;
-        $newTask->product     = $task->product;
-        $newTask->build       = $task->build;
+        $newTask->project     = isset($builds[$tasks->build[$i]]->project)   ? $builds[$tasks->build[$i]]->project : $task->project;
+        $newTask->execution   = isset($builds[$tasks->build[$i]]->execution) ? $builds[$tasks->build[$i]]->execution : $task->execution;
+        $newTask->product     = isset($builds[$tasks->build[$i]]->product)   ? $builds[$tasks->build[$i]]->product : $task->product;
+        $newTask->build       = isset($builds[$tasks->build[$i]])            ? $tasks->build[$i] : $task->build;
         $newTask->desc        = $task->desc;
         $newTask->report      = $task->report;
         $newTask->testreport  = $task->testreport;
-        $newTask->status      = 'wait';
+        $newTask->status      = $tasks->status[$i];
         $newTask->mailto      = $task->mailto;
         $newTask->autocount   = $task->autocount;
         $newTask->owner       = $tasks->owner[$i];
@@ -393,6 +404,7 @@ public function copy($task, $copyNumber)
 
         $newTasks[$i] = $newTask;
     }
+
     $cases = $this->dao->select('`case`,version')->from(TABLE_TESTRUN)->where('task')->eq($task->id)->fetchAll();
 
     $taskIDs = array();
@@ -436,10 +448,17 @@ public function copy($task, $copyNumber)
     *
     * @return 0
     * */
-public function buildSearchForm($productID, $products, $queryID, $actionURL, $branch = 0)
+public function buildSearchForm($productID, $products, $type, $queryID, $actionURL, $branch = 0)
 {
     $projectID     = $this->lang->navGroup->bug == 'qa' ? 0 : $this->session->project;
-    $productParams = ($productID and isset($products[$productID])) ? array($productID => $products[$productID]) : $products;
+    if($type == 'all')
+    {
+        $productParams = $products;
+    }
+    else
+    {
+        $productParams = ($productID and isset($products[$productID])) ? array($productID => $products[$productID]) : $products;
+    }
 
     $this->config->testtask->search['queryID']   = $queryID;
     $this->config->testtask->search['actionURL'] = $actionURL;
@@ -505,7 +524,7 @@ public function getProductTasks($productID, $branch = 'all', $orderBy = 'id_desc
         ->andWhere('t1.auto')->ne('unit')
         ->beginIF(!$this->app->user->admin)->andWhere('t1.execution')->in("0,{$this->app->user->view->sprints}")->fi()
         ->beginIF($scopeAndStatus[0] == 'local')->andWhere('t1.product')->eq((int)$productID)->fi()
-        ->beginIF($scopeAndStatus[0] == 'all')->andWhere('t1.product')->in($products)->fi()
+        ->beginIF($scopeAndStatus[0] == 'all' and strtolower($scopeAndStatus[1]) != 'bysearch')->andWhere('t1.product')->in($products)->fi()
         ->beginIF(strtolower($scopeAndStatus[1]) == 'myinvolved')
         ->andWhere('(t1.owner')->eq($this->app->user->account)
         ->orWhere("FIND_IN_SET('{$this->app->user->account}', t1.members)")

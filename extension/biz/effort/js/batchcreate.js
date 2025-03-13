@@ -19,8 +19,13 @@ function addEffort(clickedButton)
     $(nextBox).find('.chosen-container').remove();
     $(nextBox).find('select').chosen();
     $(nextBox).find('input[id^="left"]').attr('name', "left[" + num + "]").attr('id', "left[" + num + "]");
+    $(nextBox).find('input[id^="testPackageVersion"]').attr('name', "testPackageVersion[" + num + "]").attr('id', "testPackageVersion[" + num + "]");
     $(nextBox).find('select[id^=execution]').attr('name', "execution[" + num + "]").attr('id', "execution" + num);
-    if($(nextBox).find('select#objectType').val().indexOf('task_') < 0) $(nextBox).find('input[id^="left"]').attr('disabled', 'disabled');
+    if($(nextBox).find('select#objectType').val().indexOf('task_') < 0)
+    {
+        $(nextBox).find('input[id^="left"]').attr('disabled', 'disabled');
+        $(nextBox).find('input[id^="testPackageVersion"]').attr('disabled', 'disabled');
+    }
 
     num++;
     updateID();

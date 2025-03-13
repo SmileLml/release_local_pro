@@ -46,7 +46,7 @@ class mytesttask extends testtask
         if($browseType == 'bysearch') $this->session->set('testTaskVersionStatus', $browseType);
         $queryID = ($browseType == 'bysearch') ? (int)$param : 0;
         $actionURL = $this->createLink('testtask', 'browse', "&productID=$productID&branch=$branch&type=$scopeAndStatus[0],bySearch&queryID=myQueryID");
-        $this->testtask->buildSearchForm($productID, $this->products, $queryID, $actionURL, $branch);
+        $this->testtask->buildSearchForm($productID, $this->products, $scopeAndStatus[0], $queryID, $actionURL, $branch);
 
         /* Get tasks. */
         $tasks = $this->testtask->getProductTasks($productID, $branch, $sort, $pager, $scopeAndStatus, $queryID, $beginTime, $endTime);

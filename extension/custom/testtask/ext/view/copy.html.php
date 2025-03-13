@@ -12,9 +12,10 @@
 ?>
 <?php include $app->getModuleRoot() . 'common/view/header.html.php';?>
 <style>
-    .c-begin, .c-end, .c-owner {width: 120px;}
+    .c-begin, .c-end, .c-owner, .c-version {width: 120px;}
     .c-name, .c-member, .c-type {width: 200px;}
     .c-pri {width: 80px;}
+    .c-status {width: 100px;}
 </style>
 <div id='mainContent' class='main-content fade'>
   <div class='main-header'>
@@ -28,7 +29,9 @@
         <thead>
           <tr>
             <th class='c-id'><?php echo $lang->idAB;?></th>
+            <th class='c-version required'><?php echo $lang->testtask->common . $lang->testtask->version;?></th>
             <th class='c-name'><?php echo $lang->testtask->name;?></th>
+            <th class='c-status'><?php echo $lang->testtask->status;?></th>
             <th class='c-begin <?php echo in_array('begin', $requiredFields) ? 'required' : '';?>'> <?php echo $lang->testtask->begin;?></th>
             <th class='c-end <?php echo in_array('end', $requiredFields) ? 'required' : '';?>'> <?php echo $lang->testtask->end;?></th>
             <th class='c-owner <?php echo in_array('owner', $requiredFields) ? 'required' : '';?>'> <?php echo $lang->testtask->owner;?></th>
@@ -44,7 +47,9 @@
           <tr>
             <td class='text-left'><?php echo $i;?></td>
             <?php $name = $task->name . ($i == 10 ? "0" : "00") . $i; ?>
+            <td><?php echo html::select("build[$i]", $builds, $task->build, "class='form-control chosen'");?></td>
             <td><?php echo html::input("name[$i]", $name, "class='form-control'");?></td>
+            <td><?php echo html::select("status[$i]", $lang->testtask->statusList, $task->status, "class='form-control chosen'");?></td>
             <td><?php echo html::input("begin[$i]", $task->begin ?: '0000-00-00', 'size=4 class="form-control form-date"');?></td>
             <td><?php echo html::input("end[$i]", $task->end ?: '0000-00-00', 'size=4 class="form-control form-date"');?></td>
             <td><?php echo html::select("owner[$i]", $users, $task->owner, "class='form-control chosen'");?></td>

@@ -1,7 +1,7 @@
 <?php
 $config->effort->createEffortType = 'task, bug';
 
-$config->effort->datatable->defaultField = array('id', 'date', 'work', 'account', 'consumed', 'left', 'objectType', 'taskDesc', 'product', 'project', 'projectStatus', 'execution');
+$config->effort->datatable->defaultField = array('id', 'date', 'work', 'account', 'consumed', 'left', 'objectType', 'taskDesc','dept', 'product', 'project', 'projectStatus', 'execution');
 
 $config->effort->datatable->fieldList['work']['width']        = 'auto';
 $config->effort->datatable->fieldList['account']['width']     = '65';

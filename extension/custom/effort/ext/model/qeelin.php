@@ -21,22 +21,12 @@ public function batchCreateForMyWork()
     $nonRDUser  = (!empty($_SESSION['user']->feedback) or !empty($_COOKIE['feedbackView'])) ? true : false;
     $consumedAll = $this->getAccountStatistics('', $efforts->date);
 
-    $taskTestPackageVersion = array();
-
-    foreach($efforts->id as $id => $num)
-    {
-        $pos    = strpos($efforts->objectType[$id], '_');
-        $taskID = (substr($efforts->objectType[$id], $pos + 1));
-        if(substr($efforts->objectType[$id], 0, $pos) == 'task')
-        {
-            if(isset($efforts->testPackageVersion[$num]) && !empty($efforts->testPackageVersion[$num])) $taskTestPackageVersion[$taskID] = $efforts->testPackageVersion[$num];
-        }
-    }
-
     foreach($efforts->id as $id => $num)
     {
         $isBug = strpos($efforts->objectType[$id], 'bug') !== false;
         if(empty($efforts->work[$id]) && empty($efforts->objectType[$id]) && (!$isBug && empty($efforts->execution[$num])) && empty($efforts->consumed[$id]) && empty($efforts->left[$num])) continue;
+
+        if($efforts->objectType[$id] == 'task' and (empty($efforts->date) or helper::isZeroDate($efforts->date))) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->error->dateEmpty));
 
         $efforts->work[$id] = trim($efforts->work[$id]);
 
@@ -51,8 +41,6 @@ public function batchCreateForMyWork()
         $efforts->objectType[$id] = substr($efforts->objectType[$id], 0, $pos);
         $efforts->execution[$num] = !empty($efforts->execution[$num]) ? trim($efforts->execution[$num]) : 0;
 
-        if($efforts->objectType[$id] == 'task' and (empty($efforts->date) or helper::isZeroDate($efforts->date))) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->error->dateEmpty));
-
         if($efforts->objectType[$id] == 'bug')
         {
             $effortBug = $this->loadModel('bug')->getByID($efforts->objectID[$id]);
@@ -65,7 +53,6 @@ public function batchCreateForMyWork()
         if(!empty($left) and !is_numeric($left)) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->isNumber));
         if(!empty($left) and $left < 0)          die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->notNegative));
         if($efforts->objectType[$id] == 'task' and !$nonRDUser and empty($left) and !is_numeric($left))  die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->effort->left . $this->lang->effort->notEmpty));
-        if($efforts->objectType[$id] == 'task' and $left == 0 and !isset($taskTestPackageVersion[$efforts->objectID[$id]])) die(js::alert($this->lang->effort->common . $efforts->id[$id] . ' : ' . $this->lang->task->testPackageVersion . $this->lang->effort->notEmpty));
 
         if($efforts->objectType[$id] == 'bug')
         {
@@ -203,12 +190,6 @@ public function batchCreateForMyWork()
             $newTask->consumed      += $effort->consumed;
             $newTask->lastEditedBy   = $this->app->user->account;
             $newTask->lastEditedDate = $now;
-            if(isset($taskTestPackageVersion[$newTask->id]))
-            {
-                $newTask->testPackageVersion = $taskTestPackageVersion[$newTask->id];
-                unset($taskTestPackageVersion[$newTask->id]);
-            }
-
             if(helper::isZeroDate($task->realStarted)) $newTask->realStarted = $now;
 
             if(empty($lastDatePairs[$taskID]) or $lastDatePairs[$taskID] <= $effort->date)
@@ -932,6 +913,7 @@ public function getRecentlyExecutions($status = 'all', $limit = 20, $filterID = 
  */
 public function printCellCustom($col, $effort, $mode = 'datatable', $executions = array())
 {
+    a($effort);
     $canView  = common::hasPriv('effort', 'view');
     $account  = $this->app->user->account;
     $id       = $col->id;
@@ -1075,7 +1057,6 @@ public function update($effortID)
         ->setDefault('account', $oldEffort->account)
         ->cleanInt('objectID')
         ->join('product', ',')
-        ->remove('testPackageVersion')
         ->get();
 
     if(!empty($effort->product)) $effort->product = ',' . $effort->product . ',';
@@ -1096,12 +1077,7 @@ public function update($effortID)
 
     if($effort->consumed <= 0) die(js::alert(sprintf($this->lang->error->gt, $this->lang->effort->consumed, '0')));
     if($effort->left < 0)      die(js::alert($this->lang->effort->left . $this->lang->effort->notNegative));
-    if($effort->objectType == 'task' && $effort->left == 0)
-    {
-        $task = $this->dao->findById($effort->objectID)->from(TABLE_TASK)->fetch();
-        $testPackageVersion = $this->post->testPackageVersion;
-        if($task->status == 'done' && (!isset($testPackageVersion) || empty($testPackageVersion))) die(js::alert($this->lang->task->testPackageVersion . $this->lang->effort->notEmpty));
-    }
+
     if($effort->date > helper::now()) die(js::alert($this->lang->effort->notFuture));
     $oldEffortDate = is_numeric($oldEffort->date) ? substr($oldEffort->date, 0, 4) . '-' . substr($oldEffort->date, 4, 2) . '-' . substr($oldEffort->date, 6, 2) : $oldEffort->date;
     if($oldEffortDate == $effort->date)
@@ -1130,13 +1106,6 @@ public function update($effortID)
                 ->exec();
         }
 
-        if($effort->objectType == 'task' && isset($testPackageVersion))
-        {
-            $this->dao->update(TABLE_TASK)->set('testPackageVersion')->eq($testPackageVersion)
-                ->set('lastEditedBy')->eq($this->app->user->account)
-                ->where('id')->eq($effort->objectID)
-                ->exec();
-        }
         $changes = common::createChanges($oldEffort, $effort);
         if($changes) $this->changeTaskConsumed($effort, 'add', $oldEffort);
         if($oldEffort->objectType == 'task' and $oldEffort->objectID != $effort->objectID) $this->changeTaskConsumed($oldEffort, 'delete');
@@ -1161,7 +1130,7 @@ public function getAccountStatistics($account = '', $date = 'today')
     $consumed = 0;
     foreach($efforts as $effort) $consumed += $effort->consumed;
 
-    return ceil($consumed * 100) / 100;
+    return $consumed;
 }
 
 public function printCellExt($col, $effort, $mode = 'datatable', $executions = array())
@@ -1201,15 +1170,6 @@ public function printCellExt($col, $effort, $mode = 'datatable', $executions = a
             if(empty($projects)) $projects = $this->loadModel('project')->getPairsByProgram();
             $effort->projectName = zget($projects, $effort->project, '');
             $title = " title='{$effort->projectName}'";
-        }
-
-        if($id == 'projectStatus')
-        {
-            static $projects;
-            if(empty($projects)) $projects = $this->loadModel('project')->getPairsByProgram();
-            $this->loadModel('project');
-            $effort->projectStatus = !empty($effort->project) && isset($projects[$effort->project]) ? zget($this->lang->project->statusList, $effort->projectStatus, '') : '';
-            $title = " title='{$effort->projectStatus}'";
         }
 
         if($id == 'dept')
@@ -1267,9 +1227,6 @@ public function printCellExt($col, $effort, $mode = 'datatable', $executions = a
         case 'execution':
             echo $effort->executionName;
             break;
-        case 'projectStatus':
-            echo $effort->projectStatus;
-            break;
         case 'project':
             echo $effort->projectName;
             break;
@@ -1280,22 +1237,4 @@ public function printCellExt($col, $effort, $mode = 'datatable', $executions = a
         }
         echo '</td>';
     }
-}
-
-public function ajaxGetEffortsByMonth($account = '', $year = '', $month = '')
-{
-    $start = $year . '-' . $month - 1 . '-16';
-    $end   = $year . '-' . $month . '-15';
-    if($month == 1) $start = (string)($year - 1) . '-12-16';
-    if($account == '') $account = $this->app->user->account;
-    $efforts = $this->dao->select('t1.*,t2.dept')->from(TABLE_EFFORT)->alias('t1')
-            ->leftJoin(TABLE_USER)->alias('t2')->on('t1.account=t2.account')
-            ->beginIF($account != 'all')->where('t1.account')->eq($account)->fi()
-            ->andWhere('t1.date')->ge($start)
-            ->andWhere('t1.date')->le($end)
-            ->andWhere('t1.vision')->eq($this->config->vision)
-            ->andWhere('t1.deleted')->eq(0)
-            ->orderBy('date, id')
-            ->fetchAll('id');
-    return json_encode(array('statisticsByMonth' => array_sum(array_column($efforts, 'consumed'))));
 }

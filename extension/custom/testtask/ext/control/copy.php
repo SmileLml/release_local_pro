@@ -29,11 +29,12 @@ class mytesttask extends testtask
             if($this->app->tab == 'qa') return print(js::locate($this->createLink('testtask', 'browse', "productID={$productID}"), 'parent'));
         }
 
-         /* Set menu. */
+        /* Set menu. */
         if($this->app->tab == 'project')
         {
             $this->loadModel('project')->setMenu($projectID);
             $project = $this->project->getByID($projectID);
+            $builds = $this->loadModel('build')->getBuildPairs(0, 'all', 'notrunk,withexecution' . (isset($this->config->CRProject) && empty($this->config->CRProject) ? ',projectclosefilter' : ''), $projectID, 'project', '', false);
             $this->view->title      = $project->name . $this->lang->colon . $this->lang->project->common;
             $this->view->position[] = html::a($this->createLink('project', 'testtask', "projectID=$projectID"), $project->name);
         }
@@ -41,21 +42,25 @@ class mytesttask extends testtask
         {
             $this->loadModel('execution')->setMenu($executionID);
             $executions = $this->execution->getPairs(0, 'all', "nocode,executions");
+            $builds = $this->loadModel('build')->getBuildPairs($productID, 'all', 'notrunk,withexecution' . (isset($this->config->CRProject) && empty($this->config->CRProject) ? ',projectclosefilter' : ''), $executionID, 'execution', '', false);
             $this->view->title      = $executions[$executionID] . $this->lang->colon . $this->lang->testtask->common;
             $this->view->position[] = html::a($this->createLink('execution', 'testtask', "executionID=$executionID"), $executions[$executionID]);
+
         }
         elseif($this->app->tab == 'qa')
         {
             $this->loadModel('qa')->setMenu($this->products, $productID);
             $this->view->title      = $this->products[$productID] . $this->lang->colon . $this->lang->testtask->common;
             $this->view->position[] = html::a($this->createLink('testtask', 'browse', "productID=$productID"), $this->products[$productID]);
+            $builds = $this->loadModel('build')->getBuildPairs($productID, 'all', 'notrunk,withexecution' . (isset($this->config->CRProject) && empty($this->config->CRProject) ? ',projectclosefilter' : ''), 0, 'project', '', false);
         }
 
         $this->view->position[] = $this->lang->testtask->common;
         $this->view->requiredFields = explode(',', $this->config->testtask->create->requiredFields);
         $this->view->task       = $task;
+        $this->view->builds     = $builds;
         $this->view->copyNumber = $copyNumber;
-        $this->view->users       = $this->loadModel('user')->getPairs('noclosed|qdfirst|nodeleted');
+        $this->view->users      = $this->loadModel('user')->getPairs('noclosed|qdfirst|nodeleted');
         $this->display();
     }
 }
